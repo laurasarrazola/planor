@@ -37,7 +37,7 @@ export class Usuarios {
   @Column({
     name: 'email',
     type: 'varchar',
-    length: 200,
+    length: 255,
     unique: true,
   })
   email!: string;

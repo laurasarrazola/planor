@@ -43,12 +43,12 @@ export class Usuarios {
   email!: string;
 
   @Column({
-    name: 'contrasenaHash',
+    name: 'contrasena',
     type: 'varchar',
     length: 255,
     nullable: true,
   })
-  contrasenaHash?: string | null;
+  contrasena?: string | null;
 
   @Column({
     name: 'usuarioActivo',

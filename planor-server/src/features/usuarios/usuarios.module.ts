@@ -5,7 +5,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 // Importa la entidad Usuarios desde user.entity.ts. Representa la estructura de la tabla usuarios y define cómo se almacenan y gestionan los datos en la base de datos.
-import { Usuarios } from './entity/user.entity';
+import { Usuarios } from './entity/usuario.entity';
 
 // Importa el controlador UsuariosController desde usuarios.controller.ts, este define rutas y la lógica para manejar solicitudes HTTP (crear, leer, actualizar, eliminar).
 import { UsuariosController } from './usuarios.controller';

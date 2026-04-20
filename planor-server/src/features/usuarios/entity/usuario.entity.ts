@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 
 // El decorador `@Entity()` marca la clase `Usuarios` como una entidad de TypeORM. En este caso, se especifica que la tabla se llamará 'Usuarios'.
-@Entity({ name: 'Usuarios' })
+@Entity({ name: 'usuarios' })
 // La clase `Usuarios` define la estructura de la entidad que representa a la tabla 'Usuarios' en la base de datos.
 export class Usuarios {
   //  Cada propiedad de la clase representa una columna en la tabla (las propiedades son: idUsuario, nombreUsuario, apellidoUsuario, email, etc. que son asignadas con name: 'propiedad '). Los decoradores asociados a cada propiedad definen el tipo de dato (como @PrimaryGeneratedColumn, @Column, @CreateDateColumn, @UpdateDateColumn), y se definen las restricciones y otras características.

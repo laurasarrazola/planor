@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Post,
   HttpStatus as status,
 } from '@nestjs/common';
@@ -15,20 +16,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 export class UsuariosController {
   constructor(private readonly usuariosService: UsuariosService) {}
 
-  @ApiOperation({
-    summary: 'Obtener usuarios',
-    description: 'Obtener usuarios del sistema',
-  })
-  @ApiResponse({
-    status: status.OK,
-    description: 'Usuarios obtenidos exitosamente',
-    //example: createUserExample,
-  })
-  @Get()
-  async get(): Promise<Usuarios[]> {
-    return await this.usuariosService.get();
-  }
-
+  /* ========== CREAR USUARIOS ========== */
   @ApiOperation({
     summary: 'Crear nuevo usuario',
     description: 'Crea un nuevo usuario en el sistema',
@@ -45,5 +33,34 @@ export class UsuariosController {
   @Post()
   async create(@Body() crearUsuarioDto: CrearUsuarioDto): Promise<Usuarios> {
     return await this.usuariosService.create(crearUsuarioDto);
+  }
+
+  /* ========== OBTENER USUARIOS ========== */
+  @ApiOperation({
+    summary: 'Obtener usuarios',
+    description: 'Obtener usuarios del sistema',
+  })
+  @ApiResponse({
+    status: status.OK,
+    description: 'Usuarios obtenidos exitosamente',
+    //example: createUserExample,
+  })
+  @Get()
+  async get(): Promise<Usuarios[]> {
+    return await this.usuariosService.get();
+  }
+
+  /* ========== OBTENER USUARIO POR ID ========== */
+  @ApiOperation({
+    summary: 'Obtener usuario por ID',
+    description: 'Obtener un usuario específico por su ID',
+  })
+  @ApiResponse({
+    status: status.OK,
+    description: 'Usuario obtenido exitosamente',
+  })
+  @Get(':id')
+  async getById(@Param('id') id: number): Promise<Usuarios> {
+    return await this.usuariosService.getById(id);
   }
 }

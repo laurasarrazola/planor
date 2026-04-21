@@ -6,10 +6,8 @@ import {
   Patch,
   Post,
   Query,
-  Req,
   HttpStatus as status,
 } from '@nestjs/common';
-import type { Request } from 'express';
 import { UsuariosService } from './usuarios.service';
 import { CrearUsuarioDto } from './dto/crear-usuario.dto';
 import { Usuarios } from './entity/usuario.entity';
@@ -22,7 +20,6 @@ import {
 } from '@nestjs/swagger';
 import { ObtenerUsuariosDto } from './dto/obtener-usuarios.dto';
 import { ActualizarUsuarioDto } from './dto/actualizar-usuario.dto';
-import { CambiarContrasenaDto } from './dto/cambiar-contrasena.dto';
 
 @ApiTags('usuarios')
 @Controller('usuarios')
@@ -42,6 +39,19 @@ export class UsuariosController {
   @ApiResponse({
     status: status.BAD_REQUEST,
     description: 'El usuario no pudo ser creado',
+  })
+  @ApiConsumes('application/x-www-form-urlencoded')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        nombreUsuario: { type: 'string', example: '' },
+        apellidoUsuario: { type: 'string', example: '' },
+        email: { type: 'string', format: 'email', example: '' },
+        contrasena: { type: 'string', example: '' },
+        confirmarContrasena: { type: 'string', example: '' },
+      },
+    },
   })
   @Post()
   async create(@Body() crearUsuarioDto: CrearUsuarioDto): Promise<Usuarios> {
@@ -112,43 +122,37 @@ export class UsuariosController {
         nombreUsuario: { type: 'string', default: '', example: '' },
         apellidoUsuario: { type: 'string', default: '', example: '' },
       },
-      example: {},
     },
   })
   @Patch(':id')
   async update(
     @Param('id') id: number,
     @Body() actualizarUsuarioDto: ActualizarUsuarioDto,
-    @Req() req: Request,
-  ): Promise<Usuarios> {
-    return await this.usuariosService.actualizarUsuario(
-      id,
-      actualizarUsuarioDto,
-      req.body,
-    );
+  ) {
+    return this.usuariosService.actualizarUsuario(id, actualizarUsuarioDto);
   }
 
   /* ========== CAMBIAR CONTRASEÑA DE USUARIO ========== */
-  @ApiOperation({
-    summary: 'Cambiar contraseña de usuario',
-    description: 'Cambiar la contraseña de un usuario específico por su ID',
-  })
-  @ApiResponse({
-    status: status.OK,
-    description: 'Contraseña actualizada exitosamente',
-  })
-  @ApiResponse({
-    status: status.BAD_REQUEST,
-    description: 'La contraseña no pudo ser actualizada',
-  })
-  @Patch(':id/contrasena')
-  async cambiarContrasena(
-    @Param('id') id: number,
-    @Body() cambiarContrasenaDto: CambiarContrasenaDto,
-  ) {
-    return await this.usuariosService.cambiarContrasena(
-      id,
-      cambiarContrasenaDto,
-    );
-  }
+  //   @ApiOperation({
+  //     summary: 'Cambiar contraseña de usuario',
+  //     description: 'Cambiar la contraseña de un usuario específico por su ID',
+  //   })
+  //   @ApiResponse({
+  //     status: status.OK,
+  //     description: 'Contraseña actualizada exitosamente',
+  //   })
+  //   @ApiResponse({
+  //     status: status.BAD_REQUEST,
+  //     description: 'La contraseña no pudo ser actualizada',
+  //   })
+  //   @Patch(':id/contrasena')
+  //   async cambiarContrasena(
+  //     @Param('id') id: number,
+  //     @Body() cambiarContrasenaDto: CambiarContrasenaDto,
+  //   ) {
+  //     return await this.usuariosService.cambiarContrasena(
+  //       id,
+  //       cambiarContrasenaDto,
+  //     );
+  //   }
 }

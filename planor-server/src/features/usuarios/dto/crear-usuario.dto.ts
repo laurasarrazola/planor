@@ -1,14 +1,13 @@
 // ApiProperty es el decorador que documenta las propiedades del DTO en Swagger. Proporciona información adicional sobre cada propiedad, como su descripción, ejemplo, formato, longitud mínima y máxima, etc.
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsAlpha,
   IsEmail,
   IsNotEmpty,
   IsString,
   Length,
   Matches,
 } from 'class-validator';
-import { Transform, TransformFnParams } from 'class-transformer';
+import { Transform } from 'class-transformer';
 
 /*Los DTOs (Data Transfer Objects) definen la estructura de los datos que entran o salen de la API. Se utilizan clases para tipar y validar los datos que recibe un endpoint mediante decoradores de validación */
 
@@ -20,10 +19,17 @@ export class CrearUsuarioDto {
     minLength: 3,
     maxLength: 100,
   })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.trim();
+    }
+  })
   @IsString()
   @IsNotEmpty()
   @Length(3, 100)
-  @IsAlpha()
+  @Matches(/^[\p{L} ]+$/u, {
+    message: 'Solo letras y espacios son permitidos',
+  })
   nombreUsuario!: string;
 
   /* Validación para el apellido de usuario */
@@ -33,10 +39,17 @@ export class CrearUsuarioDto {
     minLength: 3,
     maxLength: 100,
   })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.trim();
+    }
+  })
   @IsString()
   @IsNotEmpty()
   @Length(3, 100)
-  @IsAlpha()
+  @Matches(/^[\p{L} ]+$/u, {
+    message: 'Solo letras y espacios son permitidos',
+  })
   apellidoUsuario!: string;
 
   /* Validación para el email de usuario */
@@ -47,7 +60,7 @@ export class CrearUsuarioDto {
     minLength: 5,
     maxLength: 255,
   })
-  @Transform(({ value }: TransformFnParams) => {
+  @Transform(({ value }) => {
     if (typeof value === 'string') {
       return value.trim().toLowerCase();
     }

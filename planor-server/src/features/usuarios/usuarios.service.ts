@@ -21,28 +21,43 @@ import { Usuarios } from './entity/usuario.entity';
 import { CrearUsuarioDto } from './dto/crear-usuario.dto';
 import { ObtenerUsuariosDto } from './dto/obtener-usuarios.dto';
 import { ActualizarUsuarioDto } from './dto/actualizar-usuario.dto';
-import { CambiarContrasenaDto } from './dto/cambiar-contrasena.dto';
+//import { CambiarContrasenaDto } from './dto/cambiar-contrasena.dto';
 
 // @Injectable() marca la clase para la inyección de dependencias, se crea automáticamente con el CLI.
 @Injectable()
+
+// PasswordService es un servicio que se encarga de manejar el hashing y comparación de contraseñas usando bcrypt.
+export class PasswordService {
+  private readonly saltRounds = 10;
+  // hash() toma la contraseña en texto plano y devuelve una promesa que se resuelve con la contraseña hasheada usando bcrypt.hash()
+  async hash(password: string): Promise<string> {
+    return bcrypt.hash(password, this.saltRounds);
+  }
+  // compare() toma la contraseña en texto plano y un hash, y devuelve una promesa que se resuelve con un booleano indicando si la contraseña coincide con el hash usando bcrypt.compare()
+  async compare(plain: string, hash: string): Promise<boolean> {
+    return bcrypt.compare(plain, hash);
+  }
+}
+
 // UsuariosService es el servicio que contiene la lógica para gestionar usuarios.
 export class UsuariosService {
-  /* El constructor (Método que inicializa la instancia) recibe el repositorio (Objeto que gestiona acceso, consultas y operaciones persistentes sobre entidades) y crea el objeto usuariosRepository (permite acceder a la BD), que trabaja con la entidad definida en user.entity.ts */
+  //Constructor: inyecta el repositorio Usuarios y PasswordService para operaciones DB y hashing de contraseñas
   constructor(
     @InjectRepository(Usuarios)
     private readonly usuariosRepository: Repository<Usuarios>,
+    private readonly passwordService: PasswordService,
   ) {}
 
   /* ========== CREAR USUARIO ========== */
   /**
-   * Crea un nuevo usuario en el sistema usando los datos del DTO.
+   * Crea un nuevo usuario en el sistema usando el modelo de datos del DTO.
    * @param {CrearUsuarioDto} crearUsuarioDto - información del usuario
    * @returns {Promise<Usuarios>} - Promesa que se resuelve con el usuario creado.
    */
 
-  // El método create recibe un DTO (crearUsuarioDto) y devuelve una promesa que se resuelve con el usuario creado (Usuarios).
+  //crearUsuario recibe el DTO y devuelve una promesa que se resuelve con el usuario creado.
   async crearUsuario(crearUsuarioDto: CrearUsuarioDto): Promise<Usuarios> {
-    /* Validar que el email no esté previamente registrado */
+    // Validar que el email no esté previamente registrado
     const usuarioExistente = await this.usuariosRepository.findOneBy({
       email: crearUsuarioDto.email,
     });
@@ -52,10 +67,17 @@ export class UsuariosService {
       );
     }
 
-    // Hashea la contraseña con el método hashPassword creado anteriormente y el valor de contrasena de crearUsuarioDto.
-    const hashed = await this.hashPassword(crearUsuarioDto.contrasena);
+    // Validar que la contraseña y la confirmación coincidan
+    if (crearUsuarioDto.contrasena !== crearUsuarioDto.confirmarContrasena) {
+      throw new BadRequestException(
+        'La contraseña y la confirmación no coinciden',
+      );
+    }
 
-    // crea una nueva instancia de la entidad Usuarios usando el repositorio de TypeORM (this.usuariosRepository.create()) y asigna los valores del DTO (nombreUsuario, apellidoUsuario, email) y el hash de la contraseña (contrasena: hashed).
+    // Hashea la contraseña usando PasswordService
+    const hashed = await this.passwordService.hash(crearUsuarioDto.contrasena);
+
+    // Crea una nueva instancia de la entidad Usuarios usando el método create() de TypeORM.
     const usuario = this.usuariosRepository.create({
       nombreUsuario: crearUsuarioDto.nombreUsuario,
       apellidoUsuario: crearUsuarioDto.apellidoUsuario,
@@ -63,24 +85,11 @@ export class UsuariosService {
       contrasena: hashed,
     });
 
-    // guarda el nuevo usuario en la base de datos usando el método save() del repositorio de TypeORM (this.usuariosRepository.save(usuario)) y devuelve el resultado.
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { contrasena, ...SanitizedUser } =
-      await this.usuariosRepository.save(usuario);
-    return SanitizedUser;
-  }
-
-  /* ========== HASHEO DE CONTRASEÑAS ========== */
-  /**
-   * hasheo de contraseñas usando bcrypt
-   * @param {string} contrasena - Contraseña sin hash.
-   * @returns {Promise<string>} - Promesa que se resuelve con el hash de la contraseña.
-   */
-  /* Método que recibe la contraseña(contrasena: string) sin hash y devuelve (Promise<string>) su versión hasheada (hashedPassword) usando bcrypt.hash*/
-  private async hashPassword(contrasena: string): Promise<string> {
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(contrasena, saltRounds);
-    return hashedPassword;
+    // Guarda el nuevo usuario en la base de datos con el método save() de TypeORM. Luego, se desestructura el objeto guardado para eliminar la contraseña antes de devolverlo.
+    const saved = await this.usuariosRepository.save(usuario);
+    const { contrasena: _contrasena, ...sanitized } = saved;
+    void _contrasena;
+    return sanitized as Usuarios;
   }
 
   /* ========== OBTENER USUARIOS ========== */
@@ -234,37 +243,19 @@ export class UsuariosService {
    * @param {ActualizarUsuarioDto} actualizarUsuarioDto - DTO con los datos a actualizar.
    * @returns {Promise<Usuarios>} - Promesa que resuelve con el usuario actualizado.
    */
+
   async actualizarUsuario(
     id: number,
     actualizarUsuarioDto: ActualizarUsuarioDto,
-    rawBody?: Record<string, unknown>,
   ): Promise<Usuarios> {
     const usuario = await this.usuariosRepository.findOneBy({ idUsuario: id });
-    if (!usuario) {
-      throw new NotFoundException('Usuario no encontrado');
-    }
+    if (!usuario) throw new NotFoundException('Usuario no encontrado');
 
-    // Helper: decide si el campo fue enviado y tiene un valor "real"
-    const sentAndValid = (key: string) => {
-      if (!rawBody || !Object.prototype.hasOwnProperty.call(rawBody, key))
-        return false;
-      const v = rawBody[key];
-      if (v == null) return false;
-      if (typeof v === 'string') {
-        const trimmed = v.trim();
-        // Ignorar placeholders comunes de Swagger y cadenas vacías
-        if (trimmed === '' || trimmed.toLowerCase() === 'string') return false;
-      }
-      return true;
-    };
-
-    if (sentAndValid('nombreUsuario')) {
-      usuario.nombreUsuario =
-        actualizarUsuarioDto.nombreUsuario ?? usuario.nombreUsuario;
+    if (typeof actualizarUsuarioDto.nombreUsuario !== 'undefined') {
+      usuario.nombreUsuario = actualizarUsuarioDto.nombreUsuario!;
     }
-    if (sentAndValid('apellidoUsuario')) {
-      usuario.apellidoUsuario =
-        actualizarUsuarioDto.apellidoUsuario ?? usuario.apellidoUsuario;
+    if (typeof actualizarUsuarioDto.apellidoUsuario !== 'undefined') {
+      usuario.apellidoUsuario = actualizarUsuarioDto.apellidoUsuario!;
     }
 
     const saved = await this.usuariosRepository.save(usuario);
@@ -280,33 +271,33 @@ export class UsuariosService {
    * @param {CambiarContrasenaDto} cambiarContrasenaDto - DTO con la contraseña actual, nueva contraseña y confirmación de nueva contraseña.
    * @returns {Promise<void>} - Promesa que se resuelve cuando la contraseña ha sido cambiada exitosamente.
    */
-  async cambiarContrasena(
-    id: number,
-    dto: CambiarContrasenaDto,
-  ): Promise<Usuarios> {
-    const usuario = await this.usuariosRepository.findOneBy({ idUsuario: id });
-    if (!usuario) {
-      throw new NotFoundException('Usuario no encontrado');
-    }
+  // async cambiarContrasena(
+  //   id: number,
+  //   dto: CambiarContrasenaDto,
+  // ): Promise<Usuarios> {
+  //   const usuario = await this.usuariosRepository.findOneBy({ idUsuario: id });
+  //   if (!usuario) {
+  //     throw new NotFoundException('Usuario no encontrado');
+  //   }
 
-    const match = await bcrypt.compare(
-      dto.contrasenaActual,
-      usuario.contrasena ?? '',
-    );
-    if (!match) throw new BadRequestException('Contraseña actual incorrecta');
+  //   const match = await bcrypt.compare(
+  //     dto.contrasenaActual,
+  //     usuario.contrasena ?? '',
+  //   );
+  //   if (!match) throw new BadRequestException('Contraseña actual incorrecta');
 
-    if (dto.contrasenaNueva !== dto.confirmarContrasenaNueva) {
-      throw new BadRequestException(
-        'La nueva contraseña y la confirmación no coinciden',
-      );
-    }
+  //   if (dto.contrasenaNueva !== dto.confirmarContrasenaNueva) {
+  //     throw new BadRequestException(
+  //       'La nueva contraseña y la confirmación no coinciden',
+  //     );
+  //   }
 
-    usuario.contrasena = await this.hashPassword(dto.contrasenaNueva);
-    const saved = await this.usuariosRepository.save(usuario);
-    const { contrasena, ...sanitized } = saved;
-    void contrasena;
-    return sanitized as Usuarios;
-  }
+  //   usuario.contrasena = await this.hashPassword(dto.contrasenaNueva);
+  //   const saved = await this.usuariosRepository.save(usuario);
+  //   const { contrasena, ...sanitized } = saved;
+  //   void contrasena;
+  //   return sanitized as Usuarios;
+  // }
 
   /*************************************** */
   /*************************************** */

@@ -11,7 +11,7 @@ async function bootstrap() {
   // Crea una instancia de la aplicación Nest utilizando el módulo raíz AppModule (automaticamente generado por Nest CLI).
   const app = await NestFactory.create(AppModule);
   // Usa el ValidationPipe globalmente para validar los datos de entrada en las solicitudes HTTP. Esto asegura que los datos enviados por los clientes cumplan con las reglas de validación definidas en los DTOs.
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
   /* Configuración de Swagger para la documentación de la API. */
   //Se crea un documento de Swagger utilizando el DocumentBuilder para definir el título, descripción y versión de la API. Luego, se configura SwaggerModule para servir la documentación en las rutas '/api/docs' y '/api'.

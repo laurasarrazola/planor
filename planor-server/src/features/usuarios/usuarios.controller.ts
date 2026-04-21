@@ -4,12 +4,14 @@ import {
   Get,
   Param,
   Post,
+  Query,
   HttpStatus as status,
 } from '@nestjs/common';
 import { UsuariosService } from './usuarios.service';
 import { CrearUsuarioDto } from './dto/crear-usuario.dto';
 import { Usuarios } from './entity/usuario.entity';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ObtenerUsuariosDto } from './dto/obtener-usuarios.dto';
 
 @ApiTags('usuarios')
 @Controller('usuarios')
@@ -48,6 +50,20 @@ export class UsuariosController {
   @Get()
   async get(): Promise<Usuarios[]> {
     return await this.usuariosService.get();
+  }
+
+  /* ========== OBTENER USUARIOS CON FILTROS (QUERY PARAMS) ========== */
+  @ApiOperation({
+    summary: 'Obtener usuarios según un parámetro específico',
+    description: 'Obtener usuarios según un parámetro específico',
+  })
+  @ApiResponse({
+    status: status.OK,
+    description: 'Usuarios con parámetro obtenidos exitosamente',
+  })
+  @Get('buscar')
+  async listar(@Query() filtros: ObtenerUsuariosDto) {
+    return this.usuariosService.obtenerConFiltros(filtros);
   }
 
   /* ========== OBTENER USUARIO POR ID ========== */

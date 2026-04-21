@@ -19,6 +19,7 @@ import { Usuarios } from './entity/usuario.entity';
 
 //el DTO le indica al servicio qué datos llegarán y cómo deben ser procesados.
 import { CrearUsuarioDto } from './dto/crear-usuario.dto';
+import { ObtenerUsuariosDto } from './dto/obtener-usuarios.dto';
 
 // @Injectable() marca la clase para la inyección de dependencias, se crea automáticamente con el CLI.
 @Injectable()
@@ -130,12 +131,99 @@ export class UsuariosService {
     return usuario;
   }
 
-  /*************************************** */
-  /**************************************** */
-  /* get con id */
-  /* get filtros (queryparams) */
-  /**************************************** */
-  /**************************************** */
+  /* ========== OBTENER USUARIOS CON FILTROS (QUERY PARAMS) ========== */
+  /**
+   * Método para obtener usuarios con filtros (Query Params)
+   * @param {ObtenerUsuariosDto} obtenerUsuariosDto - DTO con los filtros para la consulta.
+   * @returns {Promise<Usuarios[]>} - Promesa que resuelve con array de usuarios que cumplen los filtros.
+   */
+
+  //La función obtenerConFiltros recibe la estructura de obtenerUsuariosDto a través de la variable 'filtros' para la consulta y devuelve una promesa que resuelve con un array de usuarios que cumplen los filtros.
+  async obtenerConFiltros(filtros: ObtenerUsuariosDto) {
+    //constructorConsulta es un objeto dinámico que arma condiciones según filtros usando QueryBuilder de TypeORM para generar SQL.
+    const constructorConsulta = this.usuariosRepository
+      // .createQueryBuilder inicia la consulta con el alias 'usuario'.
+      // .select() define los campos a seleccionar en la consulta
+      .createQueryBuilder('usuario')
+      .select([
+        'usuario.idUsuario',
+        'usuario.nombreUsuario',
+        'usuario.apellidoUsuario',
+        'usuario.email',
+        'usuario.usuarioActivo',
+        'usuario.rolSistema',
+        'usuario.fechaRegistro',
+        'usuario.fechaActualizacion',
+      ]);
+
+    //andWhere cumple una función equivalente a una cláusula WHERE en SQL, permitiendo añadir condiciones adicionales unidas por AND en la consulta (por ejemplo: SELECT FROM usuarios WHERE condición1 AND condición2).
+
+    // id (número)
+    if (typeof filtros.idUsuario === 'number') {
+      constructorConsulta.andWhere('usuario.idUsuario = :id', {
+        id: filtros.idUsuario,
+      });
+    }
+
+    // nombre
+    if (
+      typeof filtros.nombreUsuario === 'string' &&
+      filtros.nombreUsuario.length > 0
+    ) {
+      constructorConsulta.andWhere('usuario.nombreUsuario = :nombre', {
+        nombre: filtros.nombreUsuario,
+      });
+    }
+
+    // apellido
+    if (
+      typeof filtros.apellidoUsuario === 'string' &&
+      filtros.apellidoUsuario.length > 0
+    ) {
+      constructorConsulta.andWhere('usuario.apellidoUsuario = :apellido', {
+        apellido: filtros.apellidoUsuario,
+      });
+    }
+
+    // email
+    if (
+      typeof filtros.emailUsuario === 'string' &&
+      filtros.emailUsuario.length > 0
+    ) {
+      constructorConsulta.andWhere('usuario.email = :email', {
+        email: filtros.emailUsuario,
+      });
+    }
+
+    // usuarioActivo
+    if (typeof filtros.usuarioActivo === 'boolean') {
+      constructorConsulta.andWhere('usuario.usuarioActivo = :activo', {
+        activo: filtros.usuarioActivo,
+      });
+    }
+
+    // rol
+    if (filtros.rolSistema) {
+      constructorConsulta.andWhere('usuario.rolSistema = :rol', {
+        rol: filtros.rolSistema,
+      });
+    }
+
+    // fechas
+    if (filtros.fechaRegistro) {
+      constructorConsulta.andWhere('usuario.fechaRegistro >= :desde', {
+        desde: filtros.fechaRegistro,
+      });
+    }
+    if (filtros.fechaActualizacion) {
+      constructorConsulta.andWhere('usuario.fechaActualizacion <= :hasta', {
+        hasta: filtros.fechaActualizacion,
+      });
+    }
+
+    // Ejecuta la consulta con getMany() y devuelve el resultado.
+    return await constructorConsulta.getMany();
+  }
 
   /*************************************** */
   /*************************************** */

@@ -5,7 +5,6 @@ import { IsNotEmpty, IsString, Length, Matches } from 'class-validator';
 export class CambiarContrasenaDto {
   @ApiProperty({
     description: 'Contraseña actual del usuario',
-    example: 'PlanorApp123!',
     required: true,
     minLength: 8,
     maxLength: 255,
@@ -21,7 +20,6 @@ export class CambiarContrasenaDto {
   @ApiProperty({
     description:
       'Nueva contraseña con mínimo 8 caracteres, al menos una mayúscula, una minúscula, un número y un carácter especial.',
-    example: 'NuevaPlanor123!',
     required: true,
     minLength: 8,
     maxLength: 255,
@@ -36,7 +34,6 @@ export class CambiarContrasenaDto {
 
   @ApiProperty({
     description: 'Confirmar nueva contraseña',
-    example: 'NuevaPlanor123!',
     required: true,
     minLength: 8,
     maxLength: 255,

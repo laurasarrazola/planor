@@ -9,7 +9,7 @@ import {
   IsString,
   Length,
 } from 'class-validator';
-import { Type, Transform } from 'class-transformer';
+import { Type, Transform, TransformFnParams } from 'class-transformer';
 
 export class ObtenerUsuariosDto {
   // Validación para el id del usuario
@@ -30,10 +30,10 @@ export class ObtenerUsuariosDto {
     maxLength: 100,
   })
   @IsOptional()
-  @Transform(({ value }) => {
-    const valor = value as unknown;
-    if (typeof valor === 'string') return valor.trim();
-    return undefined;
+  @Transform(({ value }: TransformFnParams) => {
+    if (typeof value === 'string') {
+      return value.trim().toLowerCase();
+    }
   })
   @Type(() => String)
   @IsString()
@@ -48,10 +48,10 @@ export class ObtenerUsuariosDto {
     maxLength: 100,
   })
   @IsOptional()
-  @Transform(({ value }) => {
-    const valor = value as unknown;
-    if (typeof valor === 'string') return valor.trim();
-    return undefined;
+  @Transform(({ value }: TransformFnParams) => {
+    if (typeof value === 'string') {
+      return value.trim().toLowerCase();
+    }
   })
   @Type(() => String)
   @IsString()
@@ -64,10 +64,10 @@ export class ObtenerUsuariosDto {
     description: 'Correo electrónico del usuario',
   })
   @IsOptional()
-  @Transform(({ value }) => {
-    const valor = value as unknown;
-    if (typeof valor === 'string') return valor.trim();
-    return undefined;
+  @Transform(({ value }: TransformFnParams) => {
+    if (typeof value === 'string') {
+      return value.trim().toLowerCase();
+    }
   })
   @Type(() => String)
   @IsString()

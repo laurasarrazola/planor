@@ -20,6 +20,8 @@ import { Usuarios } from './entity/usuario.entity';
 //el DTO le indica al servicio qué datos llegarán y cómo deben ser procesados.
 import { CrearUsuarioDto } from './dto/crear-usuario.dto';
 import { ObtenerUsuariosDto } from './dto/obtener-usuarios.dto';
+import { ActualizarUsuarioDto } from './dto/actualizar-usuario.dto';
+import { CambiarContrasenaDto } from './dto/cambiar-contrasena.dto';
 
 // @Injectable() marca la clase para la inyección de dependencias, se crea automáticamente con el CLI.
 @Injectable()
@@ -39,7 +41,7 @@ export class UsuariosService {
    */
 
   // El método create recibe un DTO (crearUsuarioDto) y devuelve una promesa que se resuelve con el usuario creado (Usuarios).
-  async create(crearUsuarioDto: CrearUsuarioDto): Promise<Usuarios> {
+  async crearUsuario(crearUsuarioDto: CrearUsuarioDto): Promise<Usuarios> {
     /* Validar que el email no esté previamente registrado */
     const usuarioExistente = await this.usuariosRepository.findOneBy({
       email: crearUsuarioDto.email,
@@ -89,7 +91,7 @@ export class UsuariosService {
    */
 
   /* Obtiene de usuariosRepository los datos de la bd descritos en find(), donde no se incluye la contraseña */
-  async get(): Promise<Usuarios[]> {
+  async obtenerUsuarios(): Promise<Usuarios[]> {
     const usuarios = await this.usuariosRepository.find({
       select: [
         'idUsuario',
@@ -111,7 +113,7 @@ export class UsuariosService {
    * @param {number} id - ID del usuario a obtener.
    * @returns {Promise<Usuarios>} - Promesa que resuelve con el usuario encontrado.
    */
-  async getById(id: number): Promise<Usuarios> {
+  async obtenerUsuarioPorId(id: number): Promise<Usuarios> {
     const usuario = await this.usuariosRepository.findOne({
       where: { idUsuario: id },
       select: [
@@ -138,8 +140,8 @@ export class UsuariosService {
    * @returns {Promise<Usuarios[]>} - Promesa que resuelve con array de usuarios que cumplen los filtros.
    */
 
-  //La función obtenerConFiltros recibe la estructura de obtenerUsuariosDto a través de la variable 'filtros' para la consulta y devuelve una promesa que resuelve con un array de usuarios que cumplen los filtros.
-  async obtenerConFiltros(filtros: ObtenerUsuariosDto) {
+  //La función obtenerUsuariosConFiltros recibe la estructura de obtenerUsuariosDto a través de la variable 'filtros' para la consulta y devuelve una promesa que resuelve con un array de usuarios que cumplen los filtros.
+  async obtenerUsuariosConFiltros(filtros: ObtenerUsuariosDto) {
     //constructorConsulta es un objeto dinámico que arma condiciones según filtros usando QueryBuilder de TypeORM para generar SQL.
     const constructorConsulta = this.usuariosRepository
       // .createQueryBuilder inicia la consulta con el alias 'usuario'.
@@ -223,6 +225,87 @@ export class UsuariosService {
 
     // Ejecuta la consulta con getMany() y devuelve el resultado.
     return await constructorConsulta.getMany();
+  }
+
+  /* ========== ACTUALIZAR USUARIO ========== */
+  /**
+   * Método para actualizar un usuario existente.
+   * @param {number} id - ID del usuario a actualizar.
+   * @param {ActualizarUsuarioDto} actualizarUsuarioDto - DTO con los datos a actualizar.
+   * @returns {Promise<Usuarios>} - Promesa que resuelve con el usuario actualizado.
+   */
+  async actualizarUsuario(
+    id: number,
+    actualizarUsuarioDto: ActualizarUsuarioDto,
+    rawBody?: Record<string, unknown>,
+  ): Promise<Usuarios> {
+    const usuario = await this.usuariosRepository.findOneBy({ idUsuario: id });
+    if (!usuario) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    // Helper: decide si el campo fue enviado y tiene un valor "real"
+    const sentAndValid = (key: string) => {
+      if (!rawBody || !Object.prototype.hasOwnProperty.call(rawBody, key))
+        return false;
+      const v = rawBody[key];
+      if (v == null) return false;
+      if (typeof v === 'string') {
+        const trimmed = v.trim();
+        // Ignorar placeholders comunes de Swagger y cadenas vacías
+        if (trimmed === '' || trimmed.toLowerCase() === 'string') return false;
+      }
+      return true;
+    };
+
+    if (sentAndValid('nombreUsuario')) {
+      usuario.nombreUsuario =
+        actualizarUsuarioDto.nombreUsuario ?? usuario.nombreUsuario;
+    }
+    if (sentAndValid('apellidoUsuario')) {
+      usuario.apellidoUsuario =
+        actualizarUsuarioDto.apellidoUsuario ?? usuario.apellidoUsuario;
+    }
+
+    const saved = await this.usuariosRepository.save(usuario);
+    const { contrasena: _contrasena, ...sanitized } = saved;
+    void _contrasena;
+    return sanitized as Usuarios;
+  }
+
+  /* ========== CAMBIAR CONTRASEÑA DE USUARIO ========== */
+  /**
+   * Método para cambiar la contraseña de un usuario.
+   * @param {number} id - ID del usuario cuya contraseña se va a cambiar.
+   * @param {CambiarContrasenaDto} cambiarContrasenaDto - DTO con la contraseña actual, nueva contraseña y confirmación de nueva contraseña.
+   * @returns {Promise<void>} - Promesa que se resuelve cuando la contraseña ha sido cambiada exitosamente.
+   */
+  async cambiarContrasena(
+    id: number,
+    dto: CambiarContrasenaDto,
+  ): Promise<Usuarios> {
+    const usuario = await this.usuariosRepository.findOneBy({ idUsuario: id });
+    if (!usuario) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    const match = await bcrypt.compare(
+      dto.contrasenaActual,
+      usuario.contrasena ?? '',
+    );
+    if (!match) throw new BadRequestException('Contraseña actual incorrecta');
+
+    if (dto.contrasenaNueva !== dto.confirmarContrasenaNueva) {
+      throw new BadRequestException(
+        'La nueva contraseña y la confirmación no coinciden',
+      );
+    }
+
+    usuario.contrasena = await this.hashPassword(dto.contrasenaNueva);
+    const saved = await this.usuariosRepository.save(usuario);
+    const { contrasena, ...sanitized } = saved;
+    void contrasena;
+    return sanitized as Usuarios;
   }
 
   /*************************************** */

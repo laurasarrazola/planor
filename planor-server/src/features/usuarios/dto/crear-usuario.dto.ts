@@ -16,7 +16,6 @@ export class CrearUsuarioDto {
   /* Validación para el nombre de usuario */
   @ApiProperty({
     description: 'Nombre',
-    example: 'John',
     required: true,
     minLength: 3,
     maxLength: 100,
@@ -30,7 +29,6 @@ export class CrearUsuarioDto {
   /* Validación para el apellido de usuario */
   @ApiProperty({
     description: 'Apellido',
-    example: 'Doe',
     required: true,
     minLength: 3,
     maxLength: 100,
@@ -44,7 +42,6 @@ export class CrearUsuarioDto {
   /* Validación para el email de usuario */
   @ApiProperty({
     description: 'Correo electrónico del usuario',
-    example: 'john.doe@example.com',
     required: true,
     format: 'email',
     minLength: 5,
@@ -64,7 +61,6 @@ export class CrearUsuarioDto {
   @ApiProperty({
     description:
       'Contraseña con mínimo 8 caracteres, al menos una mayúscula, una minúscula, un número y un carácter especial.',
-    example: 'PlanorApp123!',
     required: true,
     minLength: 8,
     maxLength: 255,
@@ -81,7 +77,6 @@ export class CrearUsuarioDto {
   @ApiProperty({
     description:
       'Confirmar contraseña, debe coincidir con la contraseña ingresada.',
-    example: 'PlanorApp123!',
     required: true,
     minLength: 8,
     maxLength: 255,

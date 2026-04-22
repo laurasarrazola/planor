@@ -35,10 +35,6 @@ export class PasswordService {
   async hash(password: string): Promise<string> {
     return bcrypt.hash(password, this.saltRounds);
   }
-  // compare() toma la contraseña en texto plano y un hash, y devuelve una promesa que se resuelve con un booleano indicando si la contraseña coincide con el hash usando bcrypt.compare()
-  // async compare(plain: string, hash: string): Promise<boolean> {
-  //   return bcrypt.compare(plain, hash);
-  // }
 }
 
 // UsuariosService es el servicio que contiene toda la lógica para gestionar usuarios.

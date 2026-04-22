@@ -20,6 +20,7 @@ import {
 } from '@nestjs/swagger';
 import { ObtenerUsuariosDto } from './dto/obtener-usuarios.dto';
 import { ActualizarUsuarioDto } from './dto/actualizar-usuario.dto';
+import { CambiarContrasenaDto } from './dto/cambiar-contrasena.dto';
 
 @ApiTags('usuarios')
 @Controller('usuarios')
@@ -133,26 +134,37 @@ export class UsuariosController {
   }
 
   /* ========== CAMBIAR CONTRASEÑA DE USUARIO ========== */
-  //   @ApiOperation({
-  //     summary: 'Cambiar contraseña de usuario',
-  //     description: 'Cambiar la contraseña de un usuario específico por su ID',
-  //   })
-  //   @ApiResponse({
-  //     status: status.OK,
-  //     description: 'Contraseña actualizada exitosamente',
-  //   })
-  //   @ApiResponse({
-  //     status: status.BAD_REQUEST,
-  //     description: 'La contraseña no pudo ser actualizada',
-  //   })
-  //   @Patch(':id/contrasena')
-  //   async cambiarContrasena(
-  //     @Param('id') id: number,
-  //     @Body() cambiarContrasenaDto: CambiarContrasenaDto,
-  //   ) {
-  //     return await this.usuariosService.cambiarContrasena(
-  //       id,
-  //       cambiarContrasenaDto,
-  //     );
-  //   }
+  @ApiOperation({
+    summary: 'Cambiar contraseña de usuario',
+    description: 'Cambiar la contraseña de un usuario específico por su ID',
+  })
+  @ApiResponse({
+    status: status.OK,
+    description: 'Contraseña actualizada exitosamente',
+  })
+  @ApiResponse({
+    status: status.BAD_REQUEST,
+    description: 'La contraseña no pudo ser actualizada',
+  })
+  @ApiConsumes('application/x-www-form-urlencoded')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        contrasenaActual: { type: 'string', default: '', example: '' },
+        contrasenaNueva: { type: 'string', default: '', example: '' },
+        confirmarContrasenaNueva: { type: 'string', default: '', example: '' },
+      },
+    },
+  })
+  @Patch(':id/contrasena')
+  async cambiarContrasena(
+    @Param('id') id: number,
+    @Body() cambiarContrasenaDto: CambiarContrasenaDto,
+  ) {
+    return await this.usuariosService.cambiarContrasena(
+      id,
+      cambiarContrasenaDto,
+    );
+  }
 }

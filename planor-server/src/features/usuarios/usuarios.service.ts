@@ -23,7 +23,7 @@ import { CrearUsuarioDto } from './dto/crear-usuario.dto';
 import { ObtenerUsuariosDto } from './dto/obtener-usuarios.dto';
 import { ActualizarUsuarioDto } from './dto/actualizar-usuario.dto';
 import { CambiarContrasenaDto } from './dto/cambiar-contrasena.dto';
-//import { CambiarContrasenaDto } from './dto/cambiar-contrasena.dto';
+import { EliminarUsuarioDto } from './dto/eliminar-usuario.dto';
 
 // @Injectable() marca la clase para la inyección de dependencias, se crea automáticamente con el CLI.
 @Injectable()
@@ -48,7 +48,7 @@ export class UsuariosService {
     @InjectRepository(Usuarios)
     private readonly usuariosRepository: Repository<Usuarios>,
     private readonly passwordService: PasswordService,
-  ) {}
+  ) { }
 
   /* ========== CREAR USUARIO ========== */
   /**
@@ -271,8 +271,8 @@ export class UsuariosService {
    * @returns {Promise<void>} - Promesa que se resuelve cuando la contraseña ha sido cambiada exitosamente.
    */
 
-  async cambiarContrasena( id: number, dto: CambiarContrasenaDto): Promise<Usuarios> {
-   //findOne es un método de TypeORM que busca un registro específico. where filtra un usuario cuyo campo idUsuario sea igual a id y select especifica que campos del usuario se deben devolver.
+  async cambiarContrasena(id: number, dto: CambiarContrasenaDto): Promise<Usuarios> {
+    //findOne es un método de TypeORM que busca un registro específico. where filtra un usuario cuyo campo idUsuario sea igual a id y select especifica que campos del usuario se deben devolver.
     const usuario = await this.usuariosRepository.findOne({ where: { idUsuario: id }, select: ['idUsuario', 'contrasena'], });
     // Manejo si no se encuentra el usuario con la id proporcionada.
     if (!usuario) {
@@ -280,14 +280,14 @@ export class UsuariosService {
     }
     // Manejo si el usuario no tiene contraseña almacenada (puede ser null o undefined).
     if (!usuario.contrasena) {
-    throw new BadRequestException('No hay contraseña almacenada para este usuario');
-  }
+      throw new BadRequestException('No hay contraseña almacenada para este usuario');
+    }
     // bcrypt.compare() compara la contraseña actual (dto.contrasenaActual) con el hash almacenado en la base de datos (usuario.contrasena) y maneja el error.
-    const coincide = await bcrypt.compare( dto.contrasenaActual, usuario.contrasena );
+    const coincide = await bcrypt.compare(dto.contrasenaActual, usuario.contrasena);
     if (!coincide) { throw new BadRequestException('Contraseña actual incorrecta'); }
     // Manejo si la nueva contraseña y la confirmación no coinciden.
     if (dto.contrasenaNueva !== dto.confirmarContrasenaNueva) {
-      throw new BadRequestException( 'La nueva contraseña y la confirmación no coinciden, debes ser iguales' );
+      throw new BadRequestException('La nueva contraseña y la confirmación no coinciden, debes ser iguales');
     }
     // Si todo es correcto, se hashea la nueva contraseña y se actualiza el campo contrasena del usuario. Luego, se guarda el usuario actualizado en la base de datos con save() y se devuelve el usuario actualizado sin la contraseña.
     usuario.contrasena = await this.passwordService.hash(dto.contrasenaNueva);
@@ -297,9 +297,23 @@ export class UsuariosService {
     return sanitized as Usuarios;
   }
 
-  /*************************************** */
-  /*************************************** */
-  /* método delete */
-  /*************************************** */
-  /*************************************** */
+  /* ========== ELIMINAR USUARIO ========== */
+  /** 
+   * Método para eliminar un usuario por su ID.
+   * @param {number} id - ID del usuario a eliminar.
+   * @param {EliminarUsuarioDto} eliminarUsuarioDto - DTO con la contraseña actual del usuario.
+   * @returns {Promise<void>} - Promesa que se resuelve cuando el usuario ha sido eliminado exitosamente.
+   */
+
+  async eliminarUsuario(id: number, dto: EliminarUsuarioDto) {
+    const usuario = await this.usuariosRepository.findOne({where: { idUsuario: id }, select: ['idUsuario', 'contrasena'],})
+    if (!usuario) {return('Usuario no encontrado')}
+    if (!usuario.contrasena) { throw new BadRequestException('No hay contraseña almacenada para este usuario');}
+    const contrasenaEliminar = await bcrypt.compare(dto.contrasenaActual, usuario.contrasena);
+    if (!contrasenaEliminar){throw new BadRequestException('La contraseña es incorrecta')}
+
+    usuario.usuarioActivo = false;
+    await this.usuariosRepository.save(usuario);
+    return { message: 'Usuario eliminado exitosamente' };
+  }
 }

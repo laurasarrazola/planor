@@ -21,6 +21,7 @@ import {
 import { ObtenerUsuariosDto } from './dto/obtener-usuarios.dto';
 import { ActualizarUsuarioDto } from './dto/actualizar-usuario.dto';
 import { CambiarContrasenaDto } from './dto/cambiar-contrasena.dto';
+import { EliminarUsuarioDto } from './dto/eliminar-usuario.dto';
 
 @ApiTags('usuarios')
 @Controller('usuarios')
@@ -166,5 +167,35 @@ export class UsuariosController {
       id,
       cambiarContrasenaDto,
     );
+  }
+
+  /* ========== ELIMINAR USUARIO ========== */
+  @ApiOperation({
+    summary: 'Eliminar usuario',
+    description: 'ELiminar logicamente un usuario',
+  })
+  @ApiResponse({
+    status: status.OK,
+    description: 'Usuario eliminado exitosamente',
+  })
+  @ApiResponse({
+    status: status.BAD_REQUEST,
+    description: 'EL usuario no pudo ser eliminado',
+  })
+  @ApiConsumes('application/x-www-form-urlencoded')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        contrasenaActual: { type: 'string', default: '', example: '' },
+      },
+    },
+  })
+  @Patch(':id/eliminarUsuario')
+  async eliminarUsuario(
+    @Param('id') id: number,
+    @Body() eliminarUsuarioDto: EliminarUsuarioDto,
+  ) {
+    return await this.usuariosService.eliminarUsuario(id, eliminarUsuarioDto);
   }
 }

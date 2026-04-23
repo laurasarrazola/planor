@@ -2,7 +2,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEmail,
-  IsNotEmpty,
+  //IsNotEmpty,
   IsString,
   Length,
   Matches,
@@ -14,7 +14,7 @@ import { Transform } from 'class-transformer';
 export class CrearUsuarioDto {
   /* Validación para el nombre de usuario */
   @ApiProperty({
-    description: 'Nombre',
+    description: 'Nombre del usuario',
     required: true,
     minLength: 3,
     maxLength: 100,
@@ -25,7 +25,7 @@ export class CrearUsuarioDto {
     }
   })
   @IsString()
-  @IsNotEmpty()
+  //@IsNotEmpty()
   @Length(3, 100)
   @Matches(/^[\p{L} ]+$/u, {
     message: 'Solo letras y espacios son permitidos',
@@ -34,7 +34,7 @@ export class CrearUsuarioDto {
 
   /* Validación para el apellido de usuario */
   @ApiProperty({
-    description: 'Apellido',
+    description: 'Apellido del usuario',
     required: true,
     minLength: 3,
     maxLength: 100,
@@ -45,7 +45,7 @@ export class CrearUsuarioDto {
     }
   })
   @IsString()
-  @IsNotEmpty()
+  //@IsNotEmpty()
   @Length(3, 100)
   @Matches(/^[\p{L} ]+$/u, {
     message: 'Solo letras y espacios son permitidos',
@@ -66,7 +66,7 @@ export class CrearUsuarioDto {
     }
   })
   @IsEmail()
-  @IsNotEmpty()
+  //@IsNotEmpty()
   @Length(5, 255)
   email!: string;
 
@@ -79,7 +79,7 @@ export class CrearUsuarioDto {
     maxLength: 255,
   })
   @IsString()
-  @IsNotEmpty()
+  //@IsNotEmpty()
   @Length(8, 255)
   @Matches(
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]).*$/,
@@ -95,7 +95,7 @@ export class CrearUsuarioDto {
     maxLength: 255,
   })
   @IsString()
-  @IsNotEmpty()
+  //@IsNotEmpty()
   @Length(8, 255)
   @Matches(
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]).*$/,

@@ -85,9 +85,18 @@ export class UsuariosService {
 
     // Guarda el nuevo usuario en la base de datos con el método save() de TypeORM. Luego, se desestructura el objeto guardado para eliminar la contraseña antes de devolverlo.
     const saved = await this.usuariosRepository.save(usuario);
-    const { contrasena: _contrasena, ...sanitized } = saved;
-    void _contrasena;
-    return sanitized as Usuarios;
+    // const { contrasena: _contrasena, ...sanitized } = saved;
+    // void _contrasena;
+    // return sanitized as Usuarios;
+    return {
+  idUsuario: saved.idUsuario,
+  nombreUsuario: saved.nombreUsuario,
+  apellidoUsuario: saved.apellidoUsuario,
+  email: saved.email,
+  fechaRegistro: saved.fechaRegistro,
+  usuarioActivo: saved.usuarioActivo,
+  rolSistema: saved.rolSistema
+};
   }
 
   /* ========== OBTENER USUARIOS ========== */

@@ -43,6 +43,7 @@ export class UsuariosController {
     status: status.BAD_REQUEST,
     description: 'El usuario no pudo ser creado',
   })
+  @ApiTags('usuarios')
   @ApiConsumes('application/x-www-form-urlencoded')
   @ApiBody({
     schema: {
@@ -58,7 +59,7 @@ export class UsuariosController {
   })
   @Post()
   async create(@Body() crearUsuarioDto: CrearUsuarioDto): Promise<Usuarios> {
-    return await this.usuariosService.crearUsuario(crearUsuarioDto);
+    return this.usuariosService.crearUsuario(crearUsuarioDto);
   }
 
   /* ========== OBTENER USUARIOS ========== */
@@ -98,6 +99,10 @@ export class UsuariosController {
   @ApiResponse({
     status: status.OK,
     description: 'Usuario obtenido exitosamente',
+  })
+  @ApiResponse({
+    status: status.BAD_REQUEST,
+    description: 'El usuario no pudo ser obtenido',
   })
   @Get(':id')
   async getById(@Param('id') id: number): Promise<Usuarios> {

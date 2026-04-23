@@ -143,12 +143,12 @@ export class UsuariosService {
   /* ========== OBTENER USUARIOS CON FILTROS (QUERY PARAMS) ========== */
   /**
    * Método para obtener usuarios con filtros (Query Params)
-   * @param {ObtenerUsuariosDto} obtenerUsuariosDto - DTO con los filtros para la consulta.
+   * @param {ObtenerUsuariosDto} filtros - DTO con los filtros para la consulta.
    * @returns {Promise<Usuarios[]>} - Promesa que resuelve con array de usuarios que cumplen los filtros.
    */
 
   //La función obtenerUsuariosConFiltros recibe la estructura de obtenerUsuariosDto a través de la variable 'filtros' para la consulta y devuelve una promesa que resuelve con un array de usuarios que cumplen los filtros.
-  async obtenerUsuariosConFiltros(filtros: ObtenerUsuariosDto) {
+  async obtenerUsuariosConFiltros(filtros: ObtenerUsuariosDto): Promise<Usuarios[]> {
     //constructorConsulta es un objeto dinámico que arma condiciones según filtros usando QueryBuilder de TypeORM para generar SQL.
     const constructorConsulta = this.usuariosRepository
       // .createQueryBuilder inicia la consulta con el alias 'usuario'.
@@ -165,42 +165,18 @@ export class UsuariosService {
         'usuario.fechaActualizacion',
       ]);
 
-    //andWhere cumple una función similar a WHERE en SQL, permitiendo añadir condiciones adicionales con AND en la consulta (ej: SELECT FROM usuarios WHERE condición1 AND condición2).
-
-    // id (número)
-    if (filtros.idUsuario) {
-      //'usuario.idUsuario = :id' es la condición SQL que usa :id como parámetro nombrado.
-      constructorConsulta.andWhere('usuario.idUsuario = :id', {
-        //El objeto { id: filtros.idUsuario } proporciona el valor para ese parámetro: TypeORM sustituye :id por ese valor de forma segura, evitando inyecciones SQL.
-        id: filtros.idUsuario,
-      });
+    if (filtros.busqueda) {
+      constructorConsulta.andWhere(
+        `(CONCAT(COALESCE(usuario.nombreUsuario , ''), ' ', COALESCE(usuario.apellidoUsuario, '')) LIKE :search OR usuario.email LIKE :search)`,
+        { search: `%${filtros.busqueda}%` },
+      );
     }
 
-    // nombre
-    if (filtros.nombreUsuario) {
-      constructorConsulta.andWhere('usuario.nombreUsuario = :nombre', {
-        nombre: filtros.nombreUsuario,
-      });
-    }
-
-    // apellido
-    if (filtros.apellidoUsuario) {
-      constructorConsulta.andWhere('usuario.apellidoUsuario = :apellido', {
-        apellido: filtros.apellidoUsuario,
-      });
-    }
-
-    // email
-    if (filtros.emailUsuario) {
-      constructorConsulta.andWhere('usuario.email = :email', {
-        email: filtros.emailUsuario,
-      });
-    }
 
     // usuarioActivo
     if (filtros.usuarioActivo) {
       constructorConsulta.andWhere('usuario.usuarioActivo = :activo', {
-        activo: filtros.usuarioActivo,
+        activo: filtros.usuarioActivo === 'activo',
       });
     }
 
@@ -302,11 +278,11 @@ export class UsuariosService {
    */
 
   async eliminarUsuario(id: number, dto: EliminarUsuarioDto) {
-    const usuario = await this.usuariosRepository.findOne({where: { idUsuario: id }, select: ['idUsuario', 'contrasena'],})
-    if (!usuario) {return('Usuario no encontrado')}
-    if (!usuario.contrasena) { throw new BadRequestException('No hay contraseña almacenada para este usuario');}
+    const usuario = await this.usuariosRepository.findOne({ where: { idUsuario: id }, select: ['idUsuario', 'contrasena'], })
+    if (!usuario) { return ('Usuario no encontrado') }
+    if (!usuario.contrasena) { throw new BadRequestException('No hay contraseña almacenada para este usuario'); }
     const contrasenaEliminar = await bcrypt.compare(dto.contrasenaActual, usuario.contrasena);
-    if (!contrasenaEliminar){throw new BadRequestException('La contraseña es incorrecta')}
+    if (!contrasenaEliminar) { throw new BadRequestException('La contraseña es incorrecta') }
 
     usuario.usuarioActivo = false;
     await this.usuariosRepository.save(usuario);

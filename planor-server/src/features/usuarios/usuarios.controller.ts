@@ -23,7 +23,9 @@ import { ActualizarUsuarioDto } from './dto/actualizar-usuario.dto';
 import { CambiarContrasenaDto } from './dto/cambiar-contrasena.dto';
 import { EliminarUsuarioDto } from './dto/eliminar-usuario.dto';
 
+//@ApiTags agrupa los endpoints relacionados bajo la etiqueta 'usuarios' en la documentación Swagger.
 @ApiTags('usuarios')
+//@Controller define la ruta base para todos los endpoints de este controlador. Todos los endpoints definidos en esta clase estarán bajo esta ruta base.
 @Controller('usuarios')
 export class UsuariosController {
   constructor(private readonly usuariosService: UsuariosService) {}
@@ -36,7 +38,6 @@ export class UsuariosController {
   @ApiResponse({
     status: status.CREATED,
     description: 'Usuario creado exitosamente',
-    //example: createUserExample,
   })
   @ApiResponse({
     status: status.BAD_REQUEST,

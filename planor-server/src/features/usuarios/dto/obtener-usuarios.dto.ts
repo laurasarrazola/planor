@@ -1,31 +1,10 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsBoolean,
-  IsEnum,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsPositive,
-  IsString,
-  Length,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { Type, Transform, TransformFnParams } from 'class-transformer';
 
 export class ObtenerUsuariosDto {
-  // Validación para el id del usuario
   @ApiPropertyOptional({
-    description: 'id del usuario',
-    minimum: 1,
-  })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @IsPositive()
-  idUsuario?: number;
-
-  // Validación para el nombre del usuario
-  @ApiPropertyOptional({
-    description: 'Nombre del usuario',
+    description: 'Búsqueda',
     minLength: 3,
     maxLength: 100,
   })
@@ -38,51 +17,17 @@ export class ObtenerUsuariosDto {
   @Type(() => String)
   @IsString()
   @IsNotEmpty()
-  @Length(3, 100)
-  nombreUsuario?: string;
-
-  // Validación para el apellido del usuario
-  @ApiPropertyOptional({
-    description: 'Apellido del usuario',
-    minLength: 3,
-    maxLength: 100,
-  })
-  @IsOptional()
-  @Transform(({ value }: TransformFnParams) => {
-    if (typeof value === 'string') {
-      return value.trim().toLowerCase();
-    }
-  })
-  @Type(() => String)
-  @IsString()
-  @IsNotEmpty()
-  @Length(3, 100)
-  apellidoUsuario?: string;
-
-  // Validación para el email del usuario
-  @ApiPropertyOptional({
-    description: 'Correo electrónico del usuario',
-  })
-  @IsOptional()
-  @Transform(({ value }: TransformFnParams) => {
-    if (typeof value === 'string') {
-      return value.trim().toLowerCase();
-    }
-  })
-  @Type(() => String)
-  @IsString()
-  @IsNotEmpty()
-  @Length(3, 100)
-  emailUsuario?: string;
+  busqueda?: string;
 
   //validacion para usuarios activos
   @ApiPropertyOptional({
     description: 'Indica si el usuario está activo',
+    enum: ['activo', 'inactivo'],
   })
   @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean()
-  usuarioActivo?: boolean;
+  @IsString()
+  @IsEnum(['activo', 'inactivo'])
+  usuarioActivo?: 'activo' | 'inactivo';
 
   //validacion para rol del usuario
   @ApiPropertyOptional({
@@ -108,5 +53,4 @@ export class ObtenerUsuariosDto {
   @IsOptional()
   @Type(() => Date)
   fechaActualizacion?: Date;
-  search: any;
 }

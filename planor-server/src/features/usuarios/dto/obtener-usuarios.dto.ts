@@ -3,6 +3,7 @@ import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { Type, Transform, TransformFnParams } from 'class-transformer';
 
 export class ObtenerUsuariosDto {
+  // validacion para busqueda de usuarios por nombre, apellido o email
   @ApiPropertyOptional({
     description: 'Búsqueda',
     minLength: 3,

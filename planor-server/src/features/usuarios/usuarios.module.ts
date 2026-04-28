@@ -15,7 +15,7 @@ import { UsuariosService } from './usuarios.service';
 
 // @Module() marca la clase UsuariosModule como módulo de NestJS. El objeto pasado configura imports, controllers, providers y exports, definiendo dependencias y qué servicios exporta a otros módulos.
 @Module({
-  // Imports son módulos necesarios. TypeOrmModule.forFeature([Usuarios]) registra la entidad en el módulo para inyectar su repositorio y usar TypeORM.
+  // Imports son módulos necesarios. TypeOrmModule.forFeature([Usuarios]) registra la entidad en el módulo para inyectar su repositorio y usar TypeORM. Esto permite crear e interactuar con la tabla usuarios en la base de datos a través de UsuariosService.
   imports: [TypeOrmModule.forFeature([Usuarios])],
   // Los providers son los servicios que se pueden inyectar en otros componentes del módulo.
   providers: [UsuariosService],

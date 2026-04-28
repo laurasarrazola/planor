@@ -10,8 +10,14 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 async function bootstrap() {
   // Crea una instancia de la aplicación Nest utilizando el módulo raíz AppModule (automaticamente generado por Nest CLI).
   const app = await NestFactory.create(AppModule);
-  // ValidationPipe globalmente para validar los datos de entrada en las solicitudes HTTP. transform: true transforma automáticamente los datos de entrada a los tipos definidos en los DTOs.
-  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  // ValidationPipe globalmente para validar los datos de entrada en las solicitudes HTTP. whitelist: true permite solo los campos definidos en los DTOs, forbidNonWhitelisted: true rechaza los campos no definidos, y transform: true transforma automáticamente los datos de entrada a los tipos definidos en los DTOs.
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   /* Configuración de Swagger para la documentación de la API. */
   //Se crea un documento de Swagger utilizando el DocumentBuilder para definir el título, descripción y versión de la API. Luego, se configura SwaggerModule para servir la documentación en las rutas '/api/docs' y '/api'.

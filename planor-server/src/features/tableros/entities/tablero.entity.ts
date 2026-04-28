@@ -19,7 +19,7 @@ export class Tableros {
   })
   idTablero!: number;
 
-  //@ManyToOne es una relación de muchos a uno.Indica que muchos tableros pertenecen a un usuario. La función flecha "() => Usuarios" evita problemas de orden de imports. nullable: false indica que la columna de FK no puede ser NULL
+  //@ManyToOne: relación de muchos a uno. Indica que muchos tableros pertenecen a un usuario. La función flecha "() => Usuarios" evita problemas de orden de imports. nullable: false indica que la columna de FK no puede ser NULL
   @ManyToOne(() => Usuarios, { nullable: false })
   // @JoinColumn le dice a TypeORM el nombre físico de la columna FK en la tabla.
   @JoinColumn({ name: 'idPropietario' })

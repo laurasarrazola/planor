@@ -1,3 +1,16 @@
+import { Module } from '@nestjs/common';
+import { TablerosService } from './tableros.service';
+import { TablerosController } from './tableros.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Tableros } from './entities/tablero.entity';
+
+@Module({
+  imports: [TypeOrmModule.forFeature([Tableros])],
+  controllers: [TablerosController],
+  providers: [TablerosService],
+})
+export class TablerosModule {}
+
 // import { Module } from '@nestjs/common';
 // import { TypeOrmModule } from '@nestjs/typeorm';
 // import { TablerosService } from './tableros.service';

@@ -1,3 +1,49 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
+import { TablerosService } from './tableros.service';
+import { CrearTableroDto } from './dto/crear-tablero.dto';
+import { ActualizarTableroDto } from './dto/actualizar-tablero.dto';
+
+@Controller('tableros')
+export class TablerosController {
+  constructor(private readonly tablerosService: TablerosService) {}
+
+  @Post()
+  create(@Body() crearTableroDto: CrearTableroDto) {
+    return this.tablerosService.create(crearTableroDto);
+  }
+
+  @Get()
+  findAll() {
+    return this.tablerosService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.tablerosService.findOne(+id);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body() actualizarTableroDto: ActualizarTableroDto,
+  ) {
+    return this.tablerosService.update(+id, actualizarTableroDto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.tablerosService.remove(+id);
+  }
+}
+
 // import { Body, Controller, Post, HttpStatus, Req } from '@nestjs/common';
 // import {
 //   ApiBody,

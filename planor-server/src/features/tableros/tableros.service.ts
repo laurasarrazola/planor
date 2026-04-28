@@ -1,3 +1,30 @@
+import { Injectable } from '@nestjs/common';
+import { CrearTableroDto } from './dto/crear-tablero.dto';
+import { ActualizarTableroDto } from './dto/actualizar-tablero.dto';
+
+@Injectable()
+export class TablerosService {
+  create(crearTableroDto: CrearTableroDto) {
+    return 'This action adds a new tablero';
+  }
+
+  findAll() {
+    return `This action returns all tableros`;
+  }
+
+  findOne(id: number) {
+    return `This action returns a #${id} tablero`;
+  }
+
+  update(id: number, actualizarTableroDto: ActualizarTableroDto) {
+    return `This action updates a #${id} tablero`;
+  }
+
+  remove(id: number) {
+    return `This action removes a #${id} tablero`;
+  }
+}
+
 // import { Injectable, NotFoundException } from '@nestjs/common';
 // import { InjectRepository } from '@nestjs/typeorm';
 // import { Tableros } from './entity/tableros.entity';

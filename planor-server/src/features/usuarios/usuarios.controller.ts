@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -30,7 +31,7 @@ import { EliminarUsuarioDto } from './dto/eliminar-usuario.dto';
 export class UsuariosController {
   constructor(private readonly usuariosService: UsuariosService) {}
 
-  /* ========== CREAR USUARIOS ========== */
+  /* ========== CREAR USUARIOS (POST) ========== */
   @ApiOperation({
     summary: 'Crear nuevo usuario',
     description: 'Crea un nuevo usuario en el sistema',
@@ -43,7 +44,6 @@ export class UsuariosController {
     status: status.BAD_REQUEST,
     description: 'El usuario no pudo ser creado',
   })
-  @ApiTags('usuarios')
   @ApiConsumes('application/x-www-form-urlencoded')
   @ApiBody({
     schema: {
@@ -62,7 +62,7 @@ export class UsuariosController {
     return this.usuariosService.crearUsuario(crearUsuarioDto);
   }
 
-  /* ========== OBTENER USUARIOS ========== */
+  /* ========== OBTENER USUARIOS (GET) ========== */
   @ApiOperation({
     summary: 'Obtener usuarios',
     description: 'Obtener usuarios del sistema',
@@ -70,14 +70,17 @@ export class UsuariosController {
   @ApiResponse({
     status: status.OK,
     description: 'Usuarios obtenidos exitosamente',
-    //example: createUserExample,
+  })
+  @ApiResponse({
+    status: status.BAD_REQUEST,
+    description: 'Los usuarios no pudieron ser obtenidos',
   })
   @Get()
   async get(): Promise<Usuarios[]> {
     return await this.usuariosService.obtenerUsuarios();
   }
 
-  /* ========== OBTENER USUARIOS CON FILTROS (QUERY PARAMS) ========== */
+  /* ========== OBTENER USUARIOS CON FILTROS (QUERY PARAMS) (GET) ========== */
   @ApiOperation({
     summary: 'Obtener usuarios según un parámetro específico',
     description: 'Obtener usuarios según un parámetro específico',
@@ -86,12 +89,16 @@ export class UsuariosController {
     status: status.OK,
     description: 'Usuarios con parámetro obtenidos exitosamente',
   })
+  @ApiResponse({
+    status: status.BAD_REQUEST,
+    description: 'Los usuarios con parámetro no pudieron ser obtenidos',
+  })
   @Get('buscar')
   async listar(@Query() filtros: ObtenerUsuariosDto) {
     return this.usuariosService.obtenerUsuariosConFiltros(filtros);
   }
 
-  /* ========== OBTENER USUARIO POR ID ========== */
+  /* ========== OBTENER USUARIO POR ID (GET) ========== */
   @ApiOperation({
     summary: 'Obtener usuario por ID',
     description: 'Obtener un usuario específico por su ID',
@@ -109,7 +116,7 @@ export class UsuariosController {
     return await this.usuariosService.obtenerUsuarioPorId(id);
   }
 
-  /* ========== ACTUALIZAR USUARIO ========== */
+  /* ========== ACTUALIZAR USUARIO (PATCH) ========== */
   @ApiOperation({
     summary: 'Actualizar usuario',
     description: 'Actualizar un usuario específico por su ID',
@@ -140,7 +147,7 @@ export class UsuariosController {
     return this.usuariosService.actualizarUsuario(id, actualizarUsuarioDto);
   }
 
-  /* ========== CAMBIAR CONTRASEÑA DE USUARIO ========== */
+  /* ========== CAMBIAR CONTRASEÑA DE USUARIO (PATCH) ========== */
   @ApiOperation({
     summary: 'Cambiar contraseña de usuario',
     description: 'Cambiar la contraseña de un usuario específico por su ID',
@@ -175,7 +182,7 @@ export class UsuariosController {
     );
   }
 
-  /* ========== ELIMINAR USUARIO ========== */
+  /* ========== ELIMINAR USUARIO (DELETE) ========== */
   @ApiOperation({
     summary: 'Eliminar usuario',
     description: 'ELiminar logicamente un usuario',
@@ -197,7 +204,7 @@ export class UsuariosController {
       },
     },
   })
-  @Patch(':id/eliminarUsuario')
+  @Delete(':id/eliminarUsuario')
   async eliminarUsuario(
     @Param('id') id: number,
     @Body() eliminarUsuarioDto: EliminarUsuarioDto,

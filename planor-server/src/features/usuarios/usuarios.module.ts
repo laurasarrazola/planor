@@ -11,14 +11,14 @@ import { Usuarios } from './entity/usuario.entity';
 import { UsuariosController } from './usuarios.controller';
 
 // Importa el servicio UsuariosService desde usuarios.service.ts, este contiene la lógica de negocio para gestionar usuarios, como operaciones CRUD y otras funcionalidades.
-import { PasswordService, UsuariosService } from './usuarios.service';
+import { UsuariosService } from './usuarios.service';
 
 // @Module() marca la clase UsuariosModule como módulo de NestJS. El objeto pasado configura imports, controllers, providers y exports, definiendo dependencias y qué servicios exporta a otros módulos.
 @Module({
   // Imports son módulos necesarios. TypeOrmModule.forFeature([Usuarios]) registra la entidad en el módulo para inyectar su repositorio y usar TypeORM.
   imports: [TypeOrmModule.forFeature([Usuarios])],
   // Los providers son los servicios que se pueden inyectar en otros componentes del módulo.
-  providers: [UsuariosService, PasswordService],
+  providers: [UsuariosService],
   // Los controllers manejan las rutas HTTP. Aquí se registra UsuariosController para gestionar las solicitudes relacionadas con usuarios.
   controllers: [UsuariosController],
   // Los exports son los servicios que este módulo hace disponibles para otros módulos. se exporta UsuariosService para que otros módulos puedan inyectarlo y usar su funcionalidad.

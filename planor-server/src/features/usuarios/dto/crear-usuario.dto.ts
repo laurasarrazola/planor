@@ -1,12 +1,6 @@
 // ApiProperty es el decorador que documenta las propiedades del DTO en Swagger. Proporciona información adicional sobre cada propiedad, como su descripción, ejemplo, formato, longitud mínima y máxima, etc.
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsEmail,
-  //IsNotEmpty,
-  IsString,
-  Length,
-  Matches,
-} from 'class-validator';
+import { IsEmail, IsString, Length, Matches } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 /*Los DTOs (Data Transfer Objects) definen la estructura de los datos que entran o salen de la API. Se utilizan clases para tipar y validar los datos que recibe un endpoint mediante decoradores de validación */

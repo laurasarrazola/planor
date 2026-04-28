@@ -28,22 +28,12 @@ import { EliminarUsuarioDto } from './dto/eliminar-usuario.dto';
 // @Injectable() marca la clase para la inyección de dependencias, se crea automáticamente con el CLI.
 @Injectable()
 
-// PasswordService es un servicio que se encarga de manejar el hashing y comparación de contraseñas usando bcrypt.
-export class PasswordService {
-  private readonly saltRounds = 10;
-  // hash() toma la contraseña en texto plano y devuelve una promesa que se resuelve con la contraseña hasheada usando bcrypt.hash()
-  async hash(password: string): Promise<string> {
-    return bcrypt.hash(password, this.saltRounds);
-  }
-}
-
 // UsuariosService es el servicio que contiene toda la lógica para gestionar usuarios.
 export class UsuariosService {
-  //Constructor: inyecta el repositorio Usuarios (TypeORM) y PasswordService (bcrypt) para operaciones DB y hashing de contraseñas
+  //Constructor: inyecta el repositorio Usuarios (TypeORM) para operaciones DB
   constructor(
     @InjectRepository(Usuarios)
     private readonly usuariosRepository: Repository<Usuarios>,
-    private readonly passwordService: PasswordService,
   ) { }
 
   /* ========== CREAR USUARIO ========== */
@@ -72,8 +62,8 @@ export class UsuariosService {
       );
     }
 
-    // Hashea la contraseña usando PasswordService
-    const hashed = await this.passwordService.hash(crearUsuarioDto.contrasena);
+    // Hashea la contraseña 
+    const hashed = await bcrypt.hash(crearUsuarioDto.contrasena, 10);
 
     // Crea una nueva instancia de la entidad Usuarios con el método create() de TypeORM.
     const usuario = this.usuariosRepository.create({
@@ -271,7 +261,7 @@ export class UsuariosService {
       throw new BadRequestException('La nueva contraseña y la confirmación no coinciden, debes ser iguales');
     }
     // Si todo es correcto, se hashea la nueva contraseña y se actualiza el campo contrasena del usuario. Luego, se guarda el usuario actualizado en la base de datos con save() y se devuelve el usuario actualizado sin la contraseña.
-    usuario.contrasena = await this.passwordService.hash(dto.contrasenaNueva);
+    usuario.contrasena = await bcrypt.hash(dto.contrasenaNueva, 10);
     const saved = await this.usuariosRepository.save(usuario);
     const { contrasena, ...sanitized } = saved;
     void contrasena;

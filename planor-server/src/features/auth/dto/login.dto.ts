@@ -17,6 +17,7 @@ export class LoginDto {
   @IsEmail()
   @Length(5, 255)
   email!: string;
+
   /* Validación de contraseña*/
   @ApiProperty({
     description: 'Contraseña de la cuenta asociada al email',

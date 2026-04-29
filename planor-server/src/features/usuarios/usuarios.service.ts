@@ -309,4 +309,16 @@ export class UsuariosService {
     await this.usuariosRepository.save(usuarioEliminar);
     return { message: 'Usuario eliminado exitosamente' };
   }
+
+  /* =============== OBTENER USUARIO POR EMAIL (PARA LOGIN) =============== */
+  /**
+   * Método para obtener un usuario por su email, utilizado para el proceso de login.
+   * @param {string} email - Email del usuario a obtener.
+   * @returns {Promise<Usuarios>} - Promesa que se resuelve con el usuario encontrado.
+   */
+  async obtenerUsuarioPorEmail(email: string): Promise<Usuarios|null> {
+    return await this.usuariosRepository.findOne({
+      where: { email }
+    });
+  }
 }

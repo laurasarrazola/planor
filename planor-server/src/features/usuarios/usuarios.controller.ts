@@ -58,7 +58,9 @@ export class UsuariosController {
     },
   })
   @Post()
-  async create(@Body() crearUsuarioDto: CrearUsuarioDto): Promise<Usuarios> {
+  async crearUsuario(
+    @Body() crearUsuarioDto: CrearUsuarioDto,
+  ): Promise<Usuarios> {
     return this.usuariosService.crearUsuario(crearUsuarioDto);
   }
 
@@ -76,7 +78,7 @@ export class UsuariosController {
     description: 'Los usuarios no pudieron ser obtenidos',
   })
   @Get()
-  async get(): Promise<Usuarios[]> {
+  async obtenerUsuarios(): Promise<Usuarios[]> {
     return await this.usuariosService.obtenerUsuarios();
   }
 
@@ -94,7 +96,7 @@ export class UsuariosController {
     description: 'Los usuarios con parámetro no pudieron ser obtenidos',
   })
   @Get('buscar')
-  async listar(@Query() filtros: ObtenerUsuariosDto) {
+  async listarUsuariosConFiltros(@Query() filtros: ObtenerUsuariosDto) {
     return this.usuariosService.obtenerUsuariosConFiltros(filtros);
   }
 
@@ -112,7 +114,7 @@ export class UsuariosController {
     description: 'El usuario no pudo ser obtenido',
   })
   @Get(':id')
-  async getById(@Param('id') id: number): Promise<Usuarios> {
+  async obtenerUsuarioPorId(@Param('id') id: number): Promise<Usuarios> {
     return await this.usuariosService.obtenerUsuarioPorId(id);
   }
 
@@ -140,7 +142,7 @@ export class UsuariosController {
     },
   })
   @Patch(':id')
-  async update(
+  async actualizarUsuario(
     @Param('id') id: number,
     @Body() actualizarUsuarioDto: ActualizarUsuarioDto,
   ) {

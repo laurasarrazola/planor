@@ -34,10 +34,11 @@ export class UsuariosService {
   constructor(
     // Se inyecta el repositorio de la entidad Usuarios usando @InjectRepository.
     @InjectRepository(Usuarios)
+    // inicializamos con la variable usuaiosRepository y se debe "comportar" como un Repository de la entidad Usuarios.
     private readonly usuariosRepository: Repository<Usuarios>,
   ) { }
 
-  /* ========== CREAR USUARIO ========== */
+  /* =============== CREAR USUARIO =============== */
   /**
    * Crea un nuevo usuario en el sistema usando el modelo de datos del DTO.
    * @param {CrearUsuarioDto} crearUsuarioDto - información del usuario
@@ -67,27 +68,33 @@ export class UsuariosService {
     const hashed = await bcrypt.hash(crearUsuarioDto.contrasena, 10);
 
     // Crea una nueva instancia de la entidad Usuarios con el método create() de TypeORM.
-    const usuarioNuevo = this.usuariosRepository.create({
-      nombreUsuario: crearUsuarioDto.nombreUsuario,
-      apellidoUsuario: crearUsuarioDto.apellidoUsuario,
-      email: crearUsuarioDto.email,
-      contrasena: hashed,
-    });
+    // const usuarioNuevo = this.usuariosRepository.create({
+    //   nombreUsuario: crearUsuarioDto.nombreUsuario,
+    //   apellidoUsuario: crearUsuarioDto.apellidoUsuario,
+    //   email: crearUsuarioDto.email,
+    //   contrasena: hashed,
+    // });
+    const usuarioNuevo = this.usuariosRepository.create(crearUsuarioDto);
+    usuarioNuevo.contrasena = hashed;
 
     // Guarda el nuevo usuario en la base de datos con el método save() de TypeORM. Luego, se desestructura el objeto guardado para eliminar la contraseña antes de devolverlo.
     const usuarioGuardado = await this.usuariosRepository.save(usuarioNuevo);
     return {
-  idUsuario: usuarioGuardado.idUsuario,
-  nombreUsuario: usuarioGuardado.nombreUsuario,
-  apellidoUsuario: usuarioGuardado.apellidoUsuario,
-  email: usuarioGuardado.email,
-  fechaRegistro: usuarioGuardado.fechaRegistro,
-  usuarioActivo: usuarioGuardado.usuarioActivo,
-  rolSistema: usuarioGuardado.rolSistema
-};
+      idUsuario: usuarioGuardado.idUsuario,
+      nombreUsuario: usuarioGuardado.nombreUsuario,
+      apellidoUsuario: usuarioGuardado.apellidoUsuario,
+      email: usuarioGuardado.email,
+      fechaRegistro: usuarioGuardado.fechaRegistro,
+      usuarioActivo: usuarioGuardado.usuarioActivo,
+      rolSistema: usuarioGuardado.rolSistema
+    };
+
+    //si se quisiera incluir la contraseña en la respuesta, se devolvería el usuario guardado completo sin desestructurar.
+    // const usuarioGuardadoCompleto = await this.usuariosRepository.save(usuarioNuevo);
+    // return usuarioGuardadoCompleto;
   }
 
-  /* ========== OBTENER USUARIOS ========== */
+  /* =============== OBTENER USUARIOS =============== */
   /**
    * Método para obtener todos los usuarios del sistema.
    * @param {void} - No recibe parámetros.
@@ -111,13 +118,13 @@ export class UsuariosService {
     return usuariosObtenidos;
   }
 
-  /* ========== OBTENER USUARIOS POR ID ========== */
+  /* =============== OBTENER USUARIOS POR ID =============== */
   /**
    * Método para obtener un usuario por su ID.
    * @param {number} id - ID del usuario a obtener.
    * @returns {Promise<Usuarios>} - Promesa que resuelve con el usuario encontrado.
    */
-  async obtenerUsuarioPorId(id: number): Promise<Usuarios> {
+  async obtenerUsuarioPorId(id: number): Promise<Usuarios> { 
     const usuarioObtenido = await this.usuariosRepository.findOne({
       where: { idUsuario: id },
       select: [
@@ -137,7 +144,7 @@ export class UsuariosService {
     return usuarioObtenido;
   }
 
-  /* ========== OBTENER USUARIOS CON FILTROS (QUERY PARAMS) ========== */
+  /* =============== OBTENER USUARIOS CON FILTROS (QUERY PARAMS) =============== */
   /**
    * Método para obtener usuarios con filtros (Query Params)
    * @param {ObtenerUsuariosDto} filtros - DTO con los filtros para la consulta.
@@ -162,7 +169,7 @@ export class UsuariosService {
         'usuario.fechaActualizacion',
       ]);
 
-      // Si el DTO tiene un valor en 'busqueda', se agrega una condición que busca coincidencias en nombreUsuario, apellidoUsuario o email usando LIKE.
+    // Si el DTO tiene un valor en 'busqueda', se agrega una condición que busca coincidencias en nombreUsuario, apellidoUsuario o email usando LIKE.
     if (filtros.busqueda) {
       constructorConsulta.andWhere(
         `(CONCAT(COALESCE(usuario.nombreUsuario , ''), ' ', COALESCE(usuario.apellidoUsuario, '')) LIKE :search OR usuario.email LIKE :search)`,
@@ -200,7 +207,7 @@ export class UsuariosService {
     return await constructorConsulta.getMany();
   }
 
-  /* ========== ACTUALIZAR USUARIO ========== */
+  /* =============== ACTUALIZAR USUARIO =============== */
   /**
    * Método para actualizar un usuario existente.
    * @param {number} id - ID del usuario a actualizar.
@@ -208,39 +215,22 @@ export class UsuariosService {
    * @returns {Promise<Usuarios>} - Promesa que resuelve con el usuario actualizado.
    */
 
-  async actualizarUsuario( id: number, actualizarUsuarioDto: ActualizarUsuarioDto,): Promise<Usuarios> {
+  async actualizarUsuario(id: number, actualizarUsuarioDto: ActualizarUsuarioDto,): Promise<Usuarios> {
     // Busca el usuario por ID con findOneBy(). Si no se encuentra, lanza NotFoundException.
     const usuarioAActualizar = await this.usuariosRepository.findOneBy({ idUsuario: id });
     if (!usuarioAActualizar) throw new NotFoundException('Usuario no encontrado');
 
-    // Actualiza solo los campos que se proporcionan en el DTO. Si a un campo no se le proporciona un valor, se mantiene el valor actual.
-    if (typeof actualizarUsuarioDto.nombreUsuario !== 'undefined') {
-      usuarioAActualizar.nombreUsuario = actualizarUsuarioDto.nombreUsuario!;
-    }
-    if (typeof actualizarUsuarioDto.apellidoUsuario !== 'undefined') {
-      usuarioAActualizar.apellidoUsuario = actualizarUsuarioDto.apellidoUsuario!;
-    }
-
-    // Guarda el usuario actualizado en la base de datos con save(). Luego, se desestructura el objeto guardado para eliminar la contraseña antes de devolverlo.
-
-const usuarioActualizado = await this.usuariosRepository.save(usuarioAActualizar);
-    return {
-  idUsuario: usuarioActualizado.idUsuario,
-  nombreUsuario: usuarioActualizado.nombreUsuario,
-  apellidoUsuario: usuarioActualizado.apellidoUsuario,
-  email: usuarioActualizado.email,
-  fechaRegistro: usuarioActualizado.fechaRegistro,
-  usuarioActivo: usuarioActualizado.usuarioActivo,
-  rolSistema: usuarioActualizado.rolSistema
-};
-    // const usuarioActualizado = await this.usuariosRepository.save(usuarioAActualizar);
-    // const { contrasena: _contrasena, ...sanitized } = usuarioActualizado;
-    // void _contrasena;
-    // // Devuelve el usuario actualizado sin la contraseña.
-    // return sanitized as Usuarios;
+    // Prepara un objeto con los cambios a actualizar 
+    const cambios = {
+      nombreUsuario: actualizarUsuarioDto.nombreUsuario,
+      apellidoUsuario: actualizarUsuarioDto.apellidoUsuario,
+    };
+    // Actualiza con update() y luego obtiene el usuario actualizado para devolverlo.
+    await this.usuariosRepository.update(id, cambios);
+    return this.obtenerUsuarioPorId(id);
   }
 
-  /* ========== CAMBIAR CONTRASEÑA DE USUARIO ========== */
+  /* =============== CAMBIAR CONTRASEÑA DE USUARIO =============== */
   /**
    * Método para cambiar la contraseña de un usuario.
    * @param {number} id - ID del usuario cuya contraseña se va a cambiar.
@@ -273,19 +263,19 @@ const usuarioActualizado = await this.usuariosRepository.save(usuarioAActualizar
     // void contrasena;
     // return sanitized as Usuarios;
 
-const contrasenaActualizada = await this.usuariosRepository.save(usuarioActualizarContrasena);
+    const contrasenaActualizada = await this.usuariosRepository.save(usuarioActualizarContrasena);
     return {
-  idUsuario: contrasenaActualizada.idUsuario,
-  nombreUsuario: contrasenaActualizada.nombreUsuario,
-  apellidoUsuario: contrasenaActualizada.apellidoUsuario,
-  email: contrasenaActualizada.email,
-  fechaRegistro: contrasenaActualizada.fechaRegistro,
-  usuarioActivo: contrasenaActualizada.usuarioActivo,
-  rolSistema: contrasenaActualizada.rolSistema
-};
+      idUsuario: contrasenaActualizada.idUsuario,
+      nombreUsuario: contrasenaActualizada.nombreUsuario,
+      apellidoUsuario: contrasenaActualizada.apellidoUsuario,
+      email: contrasenaActualizada.email,
+      fechaRegistro: contrasenaActualizada.fechaRegistro,
+      usuarioActivo: contrasenaActualizada.usuarioActivo,
+      rolSistema: contrasenaActualizada.rolSistema
+    };
   }
 
-  /* ========== ELIMINAR USUARIO ========== */
+  /* =============== ELIMINAR USUARIO =============== */
   /** 
    * Método para eliminar un usuario por su ID.
    * @param {number} id - ID del usuario a eliminar.
@@ -294,11 +284,26 @@ const contrasenaActualizada = await this.usuariosRepository.save(usuarioActualiz
    */
 
   async eliminarUsuario(id: number, dto: EliminarUsuarioDto) {
-    const usuarioEliminar = await this.usuariosRepository.findOne({ where: { idUsuario: id }, select: ['idUsuario', 'contrasena'], })
-    if (!usuarioEliminar) { throw new NotFoundException('Usuario no encontrado'); }
-    if (!usuarioEliminar.contrasena) { throw new BadRequestException('No hay contraseña almacenada para este usuario'); }
+    // Selecciono un usuario por su id trayendo solo el idUsuario y la contraseña.
+    const usuarioEliminar = await this.usuariosRepository.findOne({
+      where: { idUsuario: id },
+      select: ['idUsuario', 'contrasena'],
+    })
+
+    // Manejo si no se encuentra el usuario con la id proporcionada.
+    if (!usuarioEliminar) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    // Manejo si el usuario no tiene contraseña almacenada (puede ser null o undefined) por registro con redes sociales.
+    if (!usuarioEliminar.contrasena) {
+      throw new BadRequestException('No hay contraseña almacenada para este usuario');
+    }
+    // compara la contraseña actual (dto.contrasenaActual) con el hash almacenado en la base de datos (usuarioEliminar.contrasena) 
     const contrasenaEliminar = await bcrypt.compare(dto.contrasenaActual, usuarioEliminar.contrasena);
-    if (!contrasenaEliminar) { throw new BadRequestException('La contraseña es incorrecta') }
+    if (!contrasenaEliminar) {
+      throw new BadRequestException('La contraseña es incorrecta')
+    }
 
     usuarioEliminar.usuarioActivo = false;
     await this.usuariosRepository.save(usuarioEliminar);

@@ -14,7 +14,6 @@ export class AuthService {
    * @param {string} contrasena - Contraseña del usuario que intenta iniciar sesión.
    * @returns {Promise<Usuarios>} - Promesa que resuelve con los datos del usuario si el login es exitoso, o lanza una excepción si falla.
    */
-
   async login(email: string, contrasena: string): Promise<Usuarios> {
     //const { email, contrasena } = loginDto;
     // Buscar el usuario por su email desde la base de datos utilizando el servicio de usuarios

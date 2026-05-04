@@ -3,9 +3,10 @@ import { TablerosService } from './tableros.service';
 import { TablerosController } from './tableros.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Tableros } from './entities/tablero.entity';
+import { Usuarios } from '../usuarios/entity/usuario.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Tableros])],
+  imports: [TypeOrmModule.forFeature([Tableros, Usuarios])],
   controllers: [TablerosController],
   providers: [TablerosService],
 })

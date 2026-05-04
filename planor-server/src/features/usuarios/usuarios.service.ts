@@ -1,24 +1,12 @@
-/* eslint-disable prettier/prettier */
-// Injectable: Marca el servicio como inyectable. BadRequestException: lanza error HTTP 400 cuando un dato es inválido. NotFoundException: lanza error HTTP 404 cuando un recurso no se encuentra.
 import {
   Injectable,
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-
-// import * as bcrypt importa todas las funciones de bcrypt bajo el namespace bcrypt.
 import * as bcrypt from 'bcrypt';
-
-// Inyecta el repositorio TypeORM para acceder e interactuar con la bd a traves de la entidad.
 import { InjectRepository } from '@nestjs/typeorm';
-
-// La clase Repository ejecuta CRUD y consultas sobre la entidad.
 import { Repository } from 'typeorm';
-
-// La entidad le indica al servicio la estructura de datos con la que va a trabajar.
 import { Usuarios } from './entity/usuario.entity';
-
-//el DTO le indica al servicio qué datos llegarán y cómo deben ser procesados.
 import { CrearUsuarioDto } from './dto/crear-usuario.dto';
 import { ObtenerUsuariosDto } from './dto/obtener-usuarios.dto';
 import { ActualizarUsuarioDto } from './dto/actualizar-usuario.dto';
@@ -36,7 +24,7 @@ export class UsuariosService {
     @InjectRepository(Usuarios)
     // inicializamos con la variable usuaiosRepository y se debe "comportar" como un Repository de la entidad Usuarios.
     private readonly usuariosRepository: Repository<Usuarios>,
-  ) { }
+  ) {}
 
   /* =============== CREAR USUARIO =============== */
   /**
@@ -64,7 +52,7 @@ export class UsuariosService {
       );
     }
 
-    // Hashea la contraseña 
+    // Hashea la contraseña
     const hashed = await bcrypt.hash(crearUsuarioDto.contrasena, 10);
 
     // Crea una nueva instancia de la entidad Usuarios con el método create() de TypeORM.
@@ -86,7 +74,7 @@ export class UsuariosService {
       email: usuarioGuardado.email,
       fechaRegistro: usuarioGuardado.fechaRegistro,
       usuarioActivo: usuarioGuardado.usuarioActivo,
-      rolSistema: usuarioGuardado.rolSistema
+      rolSistema: usuarioGuardado.rolSistema,
     };
 
     //si se quisiera incluir la contraseña en la respuesta, se devolvería el usuario guardado completo sin desestructurar.
@@ -124,7 +112,7 @@ export class UsuariosService {
    * @param {number} id - ID del usuario a obtener.
    * @returns {Promise<Usuarios>} - Promesa que resuelve con el usuario encontrado.
    */
-  async obtenerUsuarioPorId(id: number): Promise<Usuarios> { 
+  async obtenerUsuarioPorId(id: number): Promise<Usuarios> {
     const usuarioObtenido = await this.usuariosRepository.findOne({
       where: { idUsuario: id },
       select: [
@@ -152,7 +140,9 @@ export class UsuariosService {
    */
 
   //La función obtenerUsuariosConFiltros recibe la estructura de obtenerUsuariosDto a través de la variable 'filtros' para la consulta y devuelve una promesa que resuelve con un array de usuarios que cumplen los filtros.
-  async obtenerUsuariosConFiltros(filtros: ObtenerUsuariosDto): Promise<Usuarios[]> {
+  async obtenerUsuariosConFiltros(
+    filtros: ObtenerUsuariosDto,
+  ): Promise<Usuarios[]> {
     //constructorConsulta es un objeto dinámico que arma condiciones según filtros usando QueryBuilder de TypeORM para generar SQL.
     const constructorConsulta = this.usuariosRepository
       // .createQueryBuilder inicia la consulta con el alias 'usuario'.
@@ -215,12 +205,18 @@ export class UsuariosService {
    * @returns {Promise<Usuarios>} - Promesa que resuelve con el usuario actualizado.
    */
 
-  async actualizarUsuario(id: number, actualizarUsuarioDto: ActualizarUsuarioDto,): Promise<Usuarios> {
+  async actualizarUsuario(
+    id: number,
+    actualizarUsuarioDto: ActualizarUsuarioDto,
+  ): Promise<Usuarios> {
     // Busca el usuario por ID con findOneBy(). Si no se encuentra, lanza NotFoundException.
-    const usuarioAActualizar = await this.usuariosRepository.findOneBy({ idUsuario: id });
-    if (!usuarioAActualizar) throw new NotFoundException('Usuario no encontrado');
+    const usuarioAActualizar = await this.usuariosRepository.findOneBy({
+      idUsuario: id,
+    });
+    if (!usuarioAActualizar)
+      throw new NotFoundException('Usuario no encontrado');
 
-    // Prepara un objeto con los cambios a actualizar 
+    // Prepara un objeto con los cambios a actualizar
     const cambios = {
       nombreUsuario: actualizarUsuarioDto.nombreUsuario,
       apellidoUsuario: actualizarUsuarioDto.apellidoUsuario,
@@ -238,32 +234,52 @@ export class UsuariosService {
    * @returns {Promise<void>} - Promesa que se resuelve cuando la contraseña ha sido cambiada exitosamente.
    */
 
-  async cambiarContrasena(id: number, dto: CambiarContrasenaDto): Promise<Usuarios> {
+  async cambiarContrasena(
+    id: number,
+    dto: CambiarContrasenaDto,
+  ): Promise<Usuarios> {
     //findOne es un método de TypeORM que busca un registro específico. where filtra un usuario cuyo campo idUsuario sea igual a id y select especifica que campos del usuario se deben devolver.
-    const usuarioActualizarContrasena = await this.usuariosRepository.findOne({ where: { idUsuario: id }, select: ['idUsuario', 'contrasena'], });
+    const usuarioActualizarContrasena = await this.usuariosRepository.findOne({
+      where: { idUsuario: id },
+      select: ['idUsuario', 'contrasena'],
+    });
     // Manejo si no se encuentra el usuario con la id proporcionada.
     if (!usuarioActualizarContrasena) {
       throw new NotFoundException('Usuario no encontrado');
     }
     // Manejo si el usuario no tiene contraseña almacenada (puede ser null o undefined).
     if (!usuarioActualizarContrasena.contrasena) {
-      throw new BadRequestException('No hay contraseña almacenada para este usuario');
+      throw new BadRequestException(
+        'No hay contraseña almacenada para este usuario',
+      );
     }
     // bcrypt.compare() compara la contraseña actual (dto.contrasenaActual) con el hash almacenado en la base de datos (usuario.contrasena) y maneja el error.
-    const coincide = await bcrypt.compare(dto.contrasenaActual, usuarioActualizarContrasena.contrasena);
-    if (!coincide) { throw new BadRequestException('Contraseña actual incorrecta'); }
+    const coincide = await bcrypt.compare(
+      dto.contrasenaActual,
+      usuarioActualizarContrasena.contrasena,
+    );
+    if (!coincide) {
+      throw new BadRequestException('Contraseña actual incorrecta');
+    }
     // Manejo si la nueva contraseña y la confirmación no coinciden.
     if (dto.contrasenaNueva !== dto.confirmarContrasenaNueva) {
-      throw new BadRequestException('La nueva contraseña y la confirmación no coinciden, debes ser iguales');
+      throw new BadRequestException(
+        'La nueva contraseña y la confirmación no coinciden, debes ser iguales',
+      );
     }
     // Si todo es correcto, se hashea la nueva contraseña y se actualiza el campo contrasena del usuario. Luego, se guarda el usuario actualizado en la base de datos con save() y se devuelve el usuario actualizado sin la contraseña.
-    usuarioActualizarContrasena.contrasena = await bcrypt.hash(dto.contrasenaNueva, 10);
+    usuarioActualizarContrasena.contrasena = await bcrypt.hash(
+      dto.contrasenaNueva,
+      10,
+    );
     // const saved = await this.usuariosRepository.save(usuarioActualizarContrasena);
     // const { contrasena, ...sanitized } = saved;
     // void contrasena;
     // return sanitized as Usuarios;
 
-    const contrasenaActualizada = await this.usuariosRepository.save(usuarioActualizarContrasena);
+    const contrasenaActualizada = await this.usuariosRepository.save(
+      usuarioActualizarContrasena,
+    );
     return {
       idUsuario: contrasenaActualizada.idUsuario,
       nombreUsuario: contrasenaActualizada.nombreUsuario,
@@ -271,12 +287,12 @@ export class UsuariosService {
       email: contrasenaActualizada.email,
       fechaRegistro: contrasenaActualizada.fechaRegistro,
       usuarioActivo: contrasenaActualizada.usuarioActivo,
-      rolSistema: contrasenaActualizada.rolSistema
+      rolSistema: contrasenaActualizada.rolSistema,
     };
   }
 
   /* =============== ELIMINAR USUARIO =============== */
-  /** 
+  /**
    * Método para eliminar un usuario por su ID.
    * @param {number} id - ID del usuario a eliminar.
    * @param {EliminarUsuarioDto} eliminarUsuarioDto - DTO con la contraseña actual del usuario.
@@ -288,7 +304,7 @@ export class UsuariosService {
     const usuarioEliminar = await this.usuariosRepository.findOne({
       where: { idUsuario: id },
       select: ['idUsuario', 'contrasena'],
-    })
+    });
 
     // Manejo si no se encuentra el usuario con la id proporcionada.
     if (!usuarioEliminar) {
@@ -297,12 +313,17 @@ export class UsuariosService {
 
     // Manejo si el usuario no tiene contraseña almacenada (puede ser null o undefined) por registro con redes sociales.
     if (!usuarioEliminar.contrasena) {
-      throw new BadRequestException('No hay contraseña almacenada para este usuario');
+      throw new BadRequestException(
+        'No hay contraseña almacenada para este usuario',
+      );
     }
-    // compara la contraseña actual (dto.contrasenaActual) con el hash almacenado en la base de datos (usuarioEliminar.contrasena) 
-    const contrasenaEliminar = await bcrypt.compare(dto.contrasenaActual, usuarioEliminar.contrasena);
+    // compara la contraseña actual (dto.contrasenaActual) con el hash almacenado en la base de datos (usuarioEliminar.contrasena)
+    const contrasenaEliminar = await bcrypt.compare(
+      dto.contrasenaActual,
+      usuarioEliminar.contrasena,
+    );
     if (!contrasenaEliminar) {
-      throw new BadRequestException('La contraseña es incorrecta')
+      throw new BadRequestException('La contraseña es incorrecta');
     }
 
     usuarioEliminar.usuarioActivo = false;
@@ -316,9 +337,9 @@ export class UsuariosService {
    * @param {string} email - Email del usuario a obtener.
    * @returns {Promise<Usuarios>} - Promesa que se resuelve con el usuario encontrado.
    */
-  async obtenerUsuarioPorEmail(email: string): Promise<Usuarios|null> {
+  async obtenerUsuarioPorEmail(email: string): Promise<Usuarios | null> {
     return await this.usuariosRepository.findOne({
-      where: { email }
+      where: { email },
     });
   }
 }

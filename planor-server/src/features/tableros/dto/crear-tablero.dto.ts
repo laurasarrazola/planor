@@ -1,14 +1,27 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   Length,
   MaxLength,
+  Min,
 } from 'class-validator';
 
 export class CrearTableroDto {
+  /* Validación del propietario del tablero */
+  @ApiProperty({
+    description: 'ID del propietario del tablero',
+    required: true,
+  })
+  @IsNotEmpty()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  idPropietario!: number;
+
   /* Validación del nombre del tablero */
   @ApiProperty({
     description: 'Nombre del tablero',

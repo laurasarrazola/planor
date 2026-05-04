@@ -2,19 +2,23 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsuariosService } from '../usuarios/usuarios.service';
 //import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
-import { Usuarios } from '../usuarios/entity/usuario.entity';
+import { JwtService } from '@nestjs/jwt';
+import { RespuestaLoginDto } from './dto/respuesta-login.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly usuariosService: UsuariosService) {}
+  constructor(
+    private readonly usuariosService: UsuariosService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   /* =============== LOGIN DE USUARIO =============== */
   /**
    * @param {string} email - Email del usuario que intenta iniciar sesión.
    * @param {string} contrasena - Contraseña del usuario que intenta iniciar sesión.
-   * @returns {Promise<Usuarios>} - Promesa que resuelve con los datos del usuario si el login es exitoso, o lanza una excepción si falla.
+   * @returns {Promise<RespuestaLoginDto>} - Promesa que resuelve con los datos del usuario si el login es exitoso, o lanza una excepción si falla.
    */
-  async login(email: string, contrasena: string): Promise<Usuarios> {
+  async login(email: string, contrasena: string): Promise<RespuestaLoginDto> {
     //const { email, contrasena } = loginDto;
     // Buscar el usuario por su email desde la base de datos utilizando el servicio de usuarios
     const usuarioLogin =
@@ -34,7 +38,15 @@ export class AuthService {
     if (!contrasenaCorrecta) {
       throw new UnauthorizedException('Contraseña incorrecta');
     }
-    // Si el login es exitoso, devolver los datos del usuario desde
-    return this.usuariosService.obtenerUsuarioPorId(usuarioLogin.idUsuario);
+
+    const payload = { email: usuarioLogin.email, sub: usuarioLogin.idUsuario };
+    const token = await this.jwtService.signAsync(payload);
+
+    // Devolver el token JWT junto con el email y el ID del usuario autenticado
+    return {
+      token,
+      email: usuarioLogin.email,
+      idUsuario: usuarioLogin.idUsuario,
+    };
   }
 }

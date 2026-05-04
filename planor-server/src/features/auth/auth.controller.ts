@@ -8,7 +8,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Usuarios } from '../usuarios/entity/usuario.entity';
+import { RespuestaLoginDto } from './dto/respuesta-login.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -23,6 +23,7 @@ export class AuthController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Login exitoso',
+    type: RespuestaLoginDto,
   })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
@@ -39,7 +40,7 @@ export class AuthController {
     },
   })
   @Post('login')
-  async login(@Body() loginDto: LoginDto): Promise<Usuarios> {
+  async login(@Body() loginDto: LoginDto): Promise<RespuestaLoginDto> {
     return this.authService.login(loginDto.email, loginDto.contrasena);
   }
 }

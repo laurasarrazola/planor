@@ -39,7 +39,9 @@ export class AuthService {
       throw new UnauthorizedException('Contraseña incorrecta');
     }
 
+    // payload es la información que se incluirá en el token JWT, en este caso el email y el ID del usuario autenticado
     const payload = { email: usuarioLogin.email, sub: usuarioLogin.idUsuario };
+    // Generar el token JWT utilizando el servicio de JWT de NestJS, pasando el payload como argumento
     const token = await this.jwtService.signAsync(payload);
 
     // Devolver el token JWT junto con el email y el ID del usuario autenticado

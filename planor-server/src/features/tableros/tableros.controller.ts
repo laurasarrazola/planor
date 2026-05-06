@@ -8,6 +8,7 @@ import {
   Request,
   UnauthorizedException,
 } from '@nestjs/common';
+// Request de express es para acceder al usuario autenticado.
 import type { Request as ExpressRequest } from 'express';
 import { TablerosService } from './tableros.service';
 import { CrearTableroDto } from './dto/crear-tablero.dto';
@@ -21,13 +22,14 @@ import {
 } from '@nestjs/swagger';
 import { Tableros } from './entities/tablero.entity';
 import { AuthGuard } from '../../guards/auth/auth.guard';
+// Interfaces para el payload del JWT. Este contiene la información que se incluye en el token al momento de autenticarse.
 interface PayloadJwt {
   email: string;
   sub: number;
   iat?: number;
   exp?: number;
 }
-
+// Interface para extender el Request de Express y agregarle la propiedad user, que contendrá la información del usuario autenticado extraída del JWT.
 interface RequestConUsuario extends ExpressRequest {
   user?: PayloadJwt;
 }
@@ -62,13 +64,14 @@ export class TablerosController {
     },
   })
   @Post()
+  // @UseGuards(AuthGuard) hace que esta ruta requiera autenticación. El AuthGuard se encargará de verificar el token JWT y extraer la información del usuario autenticado.
   @UseGuards(AuthGuard)
   public async crearTablero(
     @Request() req: ExpressRequest,
     @Body() crearTableroDto: CrearTableroDto,
   ): Promise<Tableros> {
     const reqConUsuario: RequestConUsuario = req as RequestConUsuario;
-    if (!reqConUsuario.user || typeof reqConUsuario.user.sub !== 'number') {
+    if (!reqConUsuario.user) {
       throw new UnauthorizedException('Usuario no autenticado');
     }
     const idUsuarioAutenticado: number = reqConUsuario.user.sub;

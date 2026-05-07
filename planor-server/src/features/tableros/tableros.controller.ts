@@ -5,14 +5,9 @@ import {
   HttpStatus,
   UseGuards,
   Get,
-  Request,
-  UnauthorizedException,
 } from '@nestjs/common';
-// Request de express es para acceder al usuario autenticado.
-import type { Request as ExpressRequest } from 'express';
 import { TablerosService } from './tableros.service';
 import { CrearTableroDto } from './dto/crear-tablero.dto';
-//import { ActualizarTableroDto } from './dto/actualizar-tablero.dto';
 import {
   ApiBody,
   ApiConsumes,
@@ -22,17 +17,8 @@ import {
 } from '@nestjs/swagger';
 import { Tableros } from './entities/tablero.entity';
 import { AuthGuard } from '../../guards/auth/auth.guard';
-// Interfaces para el payload del JWT. Este contiene la información que se incluye en el token al momento de autenticarse.
-interface PayloadJwt {
-  email: string;
-  sub: number;
-  iat?: number;
-  exp?: number;
-}
-// Interface para extender el Request de Express y agregarle la propiedad user, que contendrá la información del usuario autenticado extraída del JWT.
-interface RequestConUsuario extends ExpressRequest {
-  user?: PayloadJwt;
-}
+import { GetUser } from '../../common/decorators/get-user.decorator';
+import { Usuarios } from '../usuarios/entity/usuario.entity';
 
 @ApiTags('tableros')
 @Controller('tableros')
@@ -57,28 +43,25 @@ export class TablerosController {
     schema: {
       type: 'object',
       properties: {
-        idPropietario: { type: 'number', example: '' },
-        nombreTablero: { type: 'string', example: '' },
-        descripcionTablero: { type: 'string', example: '' },
+        nombreTablero: { type: 'string', example: 'Mi Tablero' },
+        descripcionTablero: {
+          type: 'string',
+          example: 'Descripción del tablero',
+        },
       },
     },
   })
   @Post()
-  @UseGuards(AuthGuard) // @UseGuards(AuthGuard) hace que la ruta requiera autenticación y verifica el JWT para extraer la información del usuario autenticado.
+  @UseGuards(AuthGuard)
   public async crearTablero(
-    @Request() req: RequestConUsuario,
+    @GetUser() usuario: Usuarios,
     @Body() crearTableroDto: CrearTableroDto,
   ): Promise<Tableros> {
-    if (!req.user) {
-      throw new UnauthorizedException('Usuario no autenticado');
-    }
-    if (typeof req.user.sub !== 'number') {
-      throw new UnauthorizedException('Token inválido: sub no numérico');
-    }
-    const idUsuarioAutenticado: number = req.user.sub;
+    // Ya no necesitas validar manualmente req.user, el Guard y el Decorador lo hacen por ti
+    console.log('Usuario autenticado:', usuario); // Puedes usar esta información para depuración o lógica adicional
     return await this.tablerosService.crearTablero(
       crearTableroDto,
-      idUsuarioAutenticado,
+      usuario.idUsuario,
     );
   }
 
@@ -92,7 +75,6 @@ export class TablerosController {
     description: 'Lista de tableros obtenida exitosamente',
   })
   @Get()
-  // @UseGuards(AuthGuard)
   async obtenerTableros(): Promise<Tableros[]> {
     return await this.tablerosService.obtenerTableros();
   }

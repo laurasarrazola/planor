@@ -4,53 +4,56 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { Request } from 'express';
+import { UsuariosService } from '../../features/usuarios/usuarios.service';
 
-interface PayloadJwt {
-  email: string;
+interface JwtPayload {
   sub: number;
-  iat?: number;
-  exp?: number;
+  email: string;
 }
-
-interface RequestConUsuario extends Request {
-  user?: PayloadJwt;
-}
-
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+    private readonly usuariosService: UsuariosService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request: Request = context.switchToHttp().getRequest<Request>();
+    const request = context.switchToHttp().getRequest<Request>();
+    const token = this.extractTokenFromHeader(request);
 
-    const token: string | undefined = this.extraerToken(request);
     if (!token) {
-      throw new UnauthorizedException('Token requerido');
+      throw new UnauthorizedException('Token no proporcionado');
     }
 
     try {
-      const decoded: PayloadJwt =
-        await this.jwtService.verifyAsync<PayloadJwt>(token);
-      (request as RequestConUsuario).user = decoded;
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
+        secret: this.configService.get<string>('JWT_SECRET'),
+      });
+
+      // Buscamos el usuario completo en la base de datos
+      const usuario = await this.usuariosService.obtenerUsuarioPorId(
+        payload.sub,
+      );
+
+      if (!usuario) {
+        throw new UnauthorizedException('Usuario no válido');
+      }
+
+      // Inyectamos el usuario en el request (gracias al tipado global esto es seguro)
+      request.user = usuario;
     } catch {
-      throw new UnauthorizedException('Token inválido');
+      throw new UnauthorizedException('Token inválido o expirado');
     }
+
     return true;
   }
 
-  private extraerToken(request: Request): string | undefined {
-    const encabezadoAuthRaw: string | undefined = request.headers.authorization;
-
-    const encabezadoAuth: string | undefined = encabezadoAuthRaw;
-    if (!encabezadoAuth) {
-      return undefined;
-    }
-
-    const partes: string[] = encabezadoAuth.split(' ');
-    const posibleToken: string = partes[1];
-
-    return posibleToken;
+  private extractTokenFromHeader(request: Request): string | undefined {
+    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    return type === 'Bearer' ? token : undefined;
   }
 }

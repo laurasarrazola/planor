@@ -4,11 +4,12 @@ import { TablerosController } from './tableros.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Tableros } from './entities/tablero.entity';
 import { Usuarios } from '../usuarios/entity/usuario.entity';
+import { UsuariosModule } from '../usuarios/usuarios.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Tableros, Usuarios])],
   controllers: [TablerosController],
-  providers: [TablerosService],
+  providers: [TablerosService, UsuariosModule],
 })
 export class TablerosModule {}
 

@@ -56,7 +56,10 @@ export class TablerosService {
   }
 
   /* ========== OBTENER TABLEROS ========== */
-  // obtener todos los tableros
+  /**
+   * @param {void} - No recibe parámetros.
+   * @returns {Promise<Tableros[]>} - Promesa que se resuelve con un array de tableros.
+   */
   async obtenerTableros(): Promise<Tableros[]> {
     return await this.tablerosRepository.find({ relations: ['propietario'] });
   }

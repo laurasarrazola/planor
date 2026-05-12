@@ -10,7 +10,6 @@ export class RespuestaLoginDto {
     format: 'jwt',
   })
   @IsJWT()
-  //   @IsNotEmpty()
   token!: string;
 
   @ApiProperty({

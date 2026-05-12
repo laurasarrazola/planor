@@ -55,13 +55,6 @@ export class UsuariosService {
     // Hashea la contraseña
     const hashed = await bcrypt.hash(crearUsuarioDto.contrasena, 10);
 
-    // Crea una nueva instancia de la entidad Usuarios con el método create() de TypeORM.
-    // const usuarioNuevo = this.usuariosRepository.create({
-    //   nombreUsuario: crearUsuarioDto.nombreUsuario,
-    //   apellidoUsuario: crearUsuarioDto.apellidoUsuario,
-    //   email: crearUsuarioDto.email,
-    //   contrasena: hashed,
-    // });
     const usuarioNuevo = this.usuariosRepository.create(crearUsuarioDto);
     usuarioNuevo.contrasena = hashed;
 
@@ -272,10 +265,6 @@ export class UsuariosService {
       dto.contrasenaNueva,
       10,
     );
-    // const saved = await this.usuariosRepository.save(usuarioActualizarContrasena);
-    // const { contrasena, ...sanitized } = saved;
-    // void contrasena;
-    // return sanitized as Usuarios;
 
     const contrasenaActualizada = await this.usuariosRepository.save(
       usuarioActualizarContrasena,

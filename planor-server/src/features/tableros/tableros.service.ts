@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -64,7 +65,7 @@ export class TablerosService {
     return await this.tablerosRepository.find({ relations: ['propietario'] });
   }
 
-  /* ========== OBTENER TABLERO POR PROPIETARIO ========== */
+  /* ========== OBTENER TABLEROS POR PROPIETARIO ========== */
   /**
    * @param {number} idPropietario - ID del propietario de los tableros obtenido desde el token de autenticación.
    * @return {Promise<Tableros>} - Promesa que se resuelve con el tablero encontrado.
@@ -72,7 +73,32 @@ export class TablerosService {
   async obtenerTablerosUsuario(idPropietario: number): Promise<Tableros[]> {
     return await this.tablerosRepository.find({
       where: { propietario: { idUsuario: idPropietario } },
-      relations: ['propietario', 'invitados'],
+      relations: ['propietario'],
     });
+  }
+
+  /* ========== OBTENER DETALLES DE UN TABLERO ========== */
+  /**
+   * @param {number} idTablero - ID del tablero a obtener.
+   * @returns {Promise<Tableros>} - Promesa que se resuelve con el tablero encontrado.
+   */
+  async obtenerDetallesTablero(
+    idTablero: number,
+    idUsuario: number,
+  ): Promise<Tableros> {
+    const tableroPropio = await this.tablerosRepository.findOne({
+      where: { idTablero, propietario: { idUsuario } },
+      relations: ['propietario'],
+    });
+    if (tableroPropio) return tableroPropio;
+
+    // si no es propietario, verificar si el tablero existe
+    const existe = await this.tablerosRepository.findOne({
+      where: { idTablero },
+    });
+    if (!existe) throw new NotFoundException('Tablero no encontrado');
+
+    // existe pero no es propietario
+    throw new ForbiddenException('No tienes permiso para ver este tablero');
   }
 }

@@ -5,10 +5,12 @@ import {
   HttpStatus,
   UseGuards,
   Get,
+  Param,
 } from '@nestjs/common';
 import { TablerosService } from './tableros.service';
 import { CrearTableroDto } from './dto/crear-tablero.dto';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiConsumes,
   ApiOperation,
@@ -101,5 +103,31 @@ export class TablerosController {
     @GetUser() usuario: Usuarios,
   ): Promise<Tableros[]> {
     return await this.tablerosService.obtenerTablerosUsuario(usuario.idUsuario);
+  }
+
+  /* ========== OBTENER DETALLES DE UN TABLERO ========== */
+  @ApiOperation({
+    summary: 'Obtener detalles de un tablero',
+    description: 'Obtiene los detalles de un tablero específico',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Detalles del tablero obtenidos exitosamente',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Error al obtener los detalles del tablero',
+  })
+  @Get(':id')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  async obtenerDetallesTablero(
+    @GetUser() usuario: Usuarios,
+    @Param('id') idTablero: number,
+  ): Promise<Tableros> {
+    return await this.tablerosService.obtenerDetallesTablero(
+      idTablero,
+      usuario.idUsuario,
+    );
   }
 }

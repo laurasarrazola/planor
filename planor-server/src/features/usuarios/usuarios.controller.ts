@@ -87,6 +87,25 @@ export class UsuariosController {
     return await this.usuariosService.obtenerUsuarios();
   }
 
+  /* ========== OBTENER PERFIL PROPIO ========== */
+  @ApiOperation({
+    summary: 'Obtener el perfil propio como usuario autenticado',
+    description: 'Obtener el perfil del usuario autenticado',
+  })
+  @ApiResponse({
+    status: status.OK,
+    description: 'Perfil del usuario obtenido exitosamente',
+  })
+  @ApiResponse({
+    status: status.BAD_REQUEST,
+    description: 'El perfil del usuario no pudo ser obtenido',
+  })
+  @UseGuards(AuthGuard)
+  @Get('perfil')
+  async obtenerPerfil(@GetUser('idUsuario') idUsuario: number) {
+    return await this.usuariosService.obtenerUsuarioPorId(idUsuario);
+  }
+
   /* ========== OBTENER USUARIOS CON FILTROS (QUERY PARAMS) (GET) ========== */
   @ApiOperation({
     summary: 'Obtener usuarios según un parámetro específico',
@@ -149,7 +168,6 @@ export class UsuariosController {
   @UseGuards(AuthGuard)
   @Patch('me')
   async actualizarUsuario(
-    // @Param('id') id: number,
     @Body() actualizarUsuarioDto: ActualizarUsuarioDto,
     @GetUser('idUsuario') idUsuarioSolicitante: number,
     @GetUser('rolSistema') rolUsuarioSolicitante: 'admin' | 'usuario',
@@ -260,16 +278,17 @@ export class UsuariosController {
 
 /*
 Endpoints propuestos y requisito de token:
-OK POST /auth/register — no JWT (registro público).
-OK POST /auth/login — no JWT (retorna accessToken + refreshToken).
-NO POST /auth/refresh — no JWT (usa refreshToken o cookie httpOnly; devuelve nuevo access token).
-NO POST /auth/logout — requiere refreshToken (o JWT) para revocar/invalidar refresh en servidor; opcional @UseGuards(AuthGuard) si quieres que solo usuario autenticado lo invoque.
-NO POST /auth/recover — no JWT (envía token de un solo uso por email).
-NO POST /auth/reset — no JWT (recibe token de correo + nueva contraseña).
-NO POST /auth/social — no JWT (oauth flow), al final emitir JWT local.
-OK GET /usuarios/me — requiere AuthGuard (usuario autenticado).
-OK GET /usuarios/:id — opcional pública; si pública, devolver sólo campos no sensibles; si privada, requiere AuthGuard.
-OK PATCH /usuarios/me — requiere AuthGuard (usar token para identificar y autorizar). NO recibir :id.
-OK PATCH /usuarios/:id — solo para admins (usar RoleGuard).
-OK DELETE /usuarios/me — requiere AuthGuard y confirmación (por ejemplo contraseña en body).
+OK POST /auth/register: Crea usuario público, hashea contraseña y devuelve datos sin la contraseña.
+OK POST /auth/login: Valida email+contrasena, devuelve token, email, idUsuario.
+NO POST /auth/refresh: No implementado. (Flujo de refresh token faltante.)
+NO POST /auth/logout: No implementado. (Revocación/invalidez de refresh token faltante.)
+NO POST /auth/recover: No implementado. (Recuperación por email no implementada.)
+NO POST /auth/reset: No implementado. (Reset con token de correo no implementado.)
+NO POST /auth/social: No implementado. (OAuth/social login no implementado.)
+NO GET /usuarios/me: No existe exactamente; actualmente hay GET /usuarios/:id — src/features/usuarios/usuarios.controller.ts. GET /usuarios/:id devuelve usuario por id (sin contraseña). Recomendado: añadir GET /usuarios/me protegido que retorne el usuario del token.
+OK GET /usuarios/:id: Implementado — devuelve datos públicos del usuario por id.
+OK PATCH /usuarios/me: Implementado — @Patch('me') protegido por AuthGuard; actualiza el perfil del usuario autenticado (usa @GetUser('idUsuario')).
+OK PATCH /usuarios/contrasena: Implementado — @Patch('contrasena') protegido por AuthGuard; verifica contrasenaActual contra DB y guarda nueva contraseña.
+OK PATCH /usuarios/:id: Implementado — @Patch(':id') protegido por RoleGuard (intended admin). Recomendación: añadir AuthGuard junto a RoleGuard (@UseGuards(AuthGuard, RoleGuard)) para garantizar que request.user exista antes de evaluar rol.
+OK DELETE /usuarios/me: Implementado — @Delete('me') protegido por AuthGuard; realiza soft-delete (usuarioActivo = false) tras verificar contrasenaActual.
  */

@@ -11,6 +11,11 @@ import { Tableros } from './entities/tablero.entity';
 import { Repository } from 'typeorm';
 import { Usuarios } from '../usuarios/entity/usuario.entity';
 import { ActualizarTableroDto } from './dto/actualizar-tablero.dto';
+import { DataSource } from 'typeorm';
+import {
+  RolEnTablero,
+  TablerosUsuarios,
+} from './entities/tableros-usuarios.entity';
 
 @Injectable()
 export class TablerosService {
@@ -19,6 +24,9 @@ export class TablerosService {
     private readonly tablerosRepository: Repository<Tableros>,
     @InjectRepository(Usuarios)
     private readonly usuariosRepository: Repository<Usuarios>,
+    @InjectRepository(TablerosUsuarios)
+    private readonly tablerosUsuariosRepository: Repository<TablerosUsuarios>,
+    private readonly dataSource: DataSource,
   ) {}
 
   /* ========== CREAR TABLEROS ========== */
@@ -51,10 +59,35 @@ export class TablerosService {
       );
     }
 
-    const nuevoTablero: Tableros =
-      this.tablerosRepository.create(crearTableroDto);
-    nuevoTablero.propietario = propietarioEncontrado;
-    return await this.tablerosRepository.save(nuevoTablero);
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      const nuevoTablero: Tableros =
+        this.tablerosRepository.create(crearTableroDto);
+      nuevoTablero.propietario = propietarioEncontrado;
+
+      const savedTablero = await queryRunner.manager.save(nuevoTablero);
+
+      const miembro = this.tablerosUsuariosRepository.create({
+        tablero: savedTablero,
+        usuario: propietarioEncontrado,
+        rolEnTablero: RolEnTablero.PROPIETARIO,
+      });
+      await queryRunner.manager.save(miembro);
+
+      await queryRunner.commitTransaction();
+      // opcional: cargar relaciones antes de devolver
+      return (await this.tablerosRepository.findOne({
+        where: { idTablero: savedTablero.idTablero },
+        relations: ['propietario', 'miembros'],
+      })) as Tableros;
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   /* ========== OBTENER TABLEROS ========== */
@@ -138,4 +171,23 @@ export class TablerosService {
     await this.tablerosRepository.update(idTablero, cambios);
     return this.obtenerDetallesTablero(idTablero, idUsuario);
   }
+
+  /* ========== GESTIONAR USUARIOS DE UN TABLERO ========== */
+  /* Permitir al propietario de un tablero gestionar sus integrantes mediante: Invitar usuarios registrados al tablero. Asignarles un rol de acceso (edicionTotal, crearEliminarYMover, soloMover). Eliminar usuarios del tablero (revocar acceso).
+La eliminación únicamente revoca el acceso al tablero; no debe eliminar ni modificar tareas ni registros históricos asociados al usuario. La gestión de usuarios es exclusiva del rol propietario.
+ Comprobación de validez de las entradas	●	Usuario autenticado mediante JWT válido.
+●	Usuario autenticado = tableros.idPropietario.
+●	idTablero existe.
+●	tableroActivo = true.
+●	emailInvitado cumple formato válido.
+●	El usuario invitado debe estar registrado en el sistema.
+●	rolInvitado ∈ {edicionTotal, crearEliminarYMover, soloMover}.
+●	No debe existir ya relación activa en tablerosUsuarios para (idTablero, idUsuario).
+●	No debe existir invitación pendiente para el mismo usuario en invitacionesTableros.
+●	Para eliminación: Usuario a eliminar ≠ idPropietario.
+*/
+
+  // @param {number} idTablero - ID del tablero a editar.
+  // @param {ActualizarTableroDto} actualizarTableroDto - Información actualizada del tablero.
+  // @returns {Promise<Tableros>} - Promesa que se resuelve con el tablero actualizado.
 }

@@ -5,9 +5,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Tableros } from './entities/tablero.entity';
 import { Usuarios } from '../usuarios/entity/usuario.entity';
 import { UsuariosModule } from '../usuarios/usuarios.module';
+import { TablerosUsuarios } from './entities/tableros-usuarios.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Tableros, Usuarios]), UsuariosModule],
+  imports: [
+    TypeOrmModule.forFeature([Tableros, Usuarios, TablerosUsuarios]),
+    UsuariosModule,
+  ],
   controllers: [TablerosController],
   providers: [TablerosService],
 })

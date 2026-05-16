@@ -9,10 +9,14 @@ import { CrearTableroDto } from './dto/crear-tablero.dto';
 //import { ActualizarTableroDto } from './dto/actualizar-tablero.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Tableros } from './entities/tablero.entity';
-import { EntityManager, Repository } from 'typeorm';
+import {
+  EntityManager,
+  Repository,
+  QueryFailedError,
+  DataSource,
+} from 'typeorm';
 import { Usuarios } from '../usuarios/entity/usuario.entity';
 import { ActualizarTableroDto } from './dto/actualizar-tablero.dto';
-import { DataSource } from 'typeorm';
 import {
   RolEnTablero,
   TablerosUsuarios,
@@ -22,7 +26,24 @@ import {
   InvitacionesTableros,
   EstadoInvitacion,
 } from './entities/invitaciones-tableros.entity';
+import { ResponderInvitacionDto } from './dto/responder-invitacion.dto';
 
+//Se crean interfaces para definir la estructura de los objetos que se devolverán en las respuestas de las funciones relacionadas con las invitaciones a tableros.
+export interface RespuestaInvitacionListadoDto {
+  idInvitacionTablero: number;
+  idTablero: number;
+  nombreTablero: string;
+  descripcionTablero?: string | null;
+  nombrePropietario: string;
+  fechaAsignacion: Date;
+  rolInvitado: string;
+}
+
+export interface RespuestaAccionInvitacionDto {
+  idTableroUsuario?: number | null;
+  estadoInvitacion: EstadoInvitacion;
+  fechaRespuesta: Date;
+}
 @Injectable()
 export class TablerosService {
   constructor(
@@ -32,6 +53,8 @@ export class TablerosService {
     private readonly usuariosRepository: Repository<Usuarios>,
     @InjectRepository(TablerosUsuarios)
     private readonly tablerosUsuariosRepository: Repository<TablerosUsuarios>,
+    @InjectRepository(InvitacionesTableros)
+    private readonly invitacionesRepository: Repository<InvitacionesTableros>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -258,23 +281,163 @@ export class TablerosService {
     return invitacionCreada;
   }
 
-  /* ========== GESTIONAR INVITACIONES A TABLEROS ========== */
+  /* ========== LISTAR INVITACIONES PENDIENTES ========== */
+  /**
+   * @param {number} idUsuario - ID del usuario para el cual listar invitaciones.
+   * @returns {Promise<RespuestaInvitacionListadoDto[]>} - Promesa que se resuelve con la lista de invitaciones pendientes.
+   */
+  async listarInvitacionesPendientes(
+    idUsuario: number,
+  ): Promise<RespuestaInvitacionListadoDto[]> {
+    // buscar invitaciones pendientes con datos de tablero y propietario
+    const invitaciones = await this.invitacionesRepository.find({
+      where: {
+        usuarioInvitado: { idUsuario },
+        estadoInvitacion: EstadoInvitacion.PENDIENTE,
+      },
+      relations: ['tablero', 'tablero.propietario'],
+      order: { fechaAsignacion: 'DESC' },
+    });
 
-  /* Permitir al propietario de un tablero gestionar sus integrantes mediante: Invitar usuarios registrados al tablero. Asignarles un rol de acceso (edicionTotal, crearEliminarYMover, soloMover). Eliminar usuarios del tablero (revocar acceso).
-La eliminación únicamente revoca el acceso al tablero; no debe eliminar ni modificar tareas ni registros históricos asociados al usuario. La gestión de usuarios es exclusiva del rol propietario.
- Comprobación de validez de las entradas	●	Usuario autenticado mediante JWT válido.
-●	Usuario autenticado = tableros.idPropietario.
-●	idTablero existe.
-●	tableroActivo = true.
-●	emailInvitado cumple formato válido.
-●	El usuario invitado debe estar registrado en el sistema.
-●	rolInvitado ∈ {edicionTotal, crearEliminarYMover, soloMover}.
-●	No debe existir ya relación activa en tablerosUsuarios para (idTablero, idUsuario).
-●	No debe existir invitación pendiente para el mismo usuario en invitacionesTableros.
-●	Para eliminación: Usuario a eliminar ≠ idPropietario.
-*/
+    // mapear a DTO de respuesta para incluir sólo los datos necesarios. Se construye un nuevo objeto para cada invitación con la información requerida para la respuesta.
+    const respuesta: RespuestaInvitacionListadoDto[] = invitaciones.map(
+      (inv) => {
+        const tablero = inv.tablero;
+        const propietario = tablero.propietario;
+        return {
+          idInvitacionTablero: inv.idInvitacionTablero,
+          idTablero: tablero.idTablero,
+          nombreTablero: tablero.nombreTablero,
+          descripcionTablero: tablero.descripcionTablero ?? null,
+          nombrePropietario:
+            propietario.nombreUsuario + ' ' + propietario.apellidoUsuario,
+          fechaAsignacion: inv.fechaAsignacion,
+          rolInvitado: inv.rolInvitado,
+        };
+      },
+    );
 
-  // @param {number} idTablero - ID del tablero a editar.
-  // @param {ActualizarTableroDto} actualizarTableroDto - Información actualizada del tablero.
-  // @returns {Promise<Tableros>} - Promesa que se resuelve con el tablero actualizado.
+    return respuesta;
+  }
+
+  /* ========== RESPONDER INVITACIÓN ========== */
+  /**
+   * @param {number} idInvitacion - ID de la invitación a responder.
+   * @param {ResponderInvitacionDto} dto - DTO con la acción a realizar (aceptar o rechazar).
+   * @param {number} idUsuario - ID del usuario que responde la invitación (obtenido del token de autenticación).
+   */
+  async responderInvitacion(
+    idInvitacion: number,
+    dto: ResponderInvitacionDto,
+    idUsuario: number,
+  ): Promise<RespuestaAccionInvitacionDto> {
+    // comprobar existencia y pertenencia
+    const invitacion = await this.invitacionesRepository.findOne({
+      where: { idInvitacionTablero: idInvitacion },
+      relations: ['tablero', 'usuarioInvitado'],
+    });
+    if (!invitacion) throw new NotFoundException('Invitación no encontrada');
+    if (invitacion.usuarioInvitado.idUsuario !== idUsuario)
+      throw new ForbiddenException(
+        'La invitación no pertenece al usuario autenticado',
+      );
+    if (invitacion.estadoInvitacion !== EstadoInvitacion.PENDIENTE)
+      throw new ConflictException('La invitación ya fue respondida');
+
+    if (dto.accion === 'aceptar') {
+      return await this.aceptarInvitacion(idInvitacion, idUsuario);
+    }
+
+    if (dto.accion === 'rechazar') {
+      return await this.rechazarInvitacion(invitacion);
+    }
+
+    throw new BadRequestException('Acción no válida');
+  }
+
+  /* ========== FUNCIONES AUXILIARES PARA RESPONDER INVITACIÓN ========== */
+  private async aceptarInvitacion(
+    idInvitacion: number,
+    idUsuario: number,
+  ): Promise<RespuestaAccionInvitacionDto> {
+    try {
+      return await this.dataSource.transaction<RespuestaAccionInvitacionDto>(
+        async (manager: EntityManager) => {
+          const invitacionesRepositorio =
+            manager.getRepository(InvitacionesTableros);
+          const miembrosRepositorio = manager.getRepository(TablerosUsuarios);
+
+          const invitacionTransaccional = await invitacionesRepositorio.findOne(
+            {
+              where: { idInvitacionTablero: idInvitacion },
+              relations: ['tablero', 'usuarioInvitado'],
+            },
+          );
+          if (!invitacionTransaccional)
+            throw new NotFoundException(
+              'Invitación no encontrada (transacción)',
+            );
+          if (
+            invitacionTransaccional.estadoInvitacion !==
+            EstadoInvitacion.PENDIENTE
+          )
+            throw new ConflictException(
+              'La invitación ya fue respondida (transacción)',
+            );
+          if (invitacionTransaccional.tablero.tableroActivo === false)
+            throw new ConflictException('El tablero está inactivo');
+
+          const miembroExistente = await miembrosRepositorio.findOne({
+            where: {
+              tablero: { idTablero: invitacionTransaccional.tablero.idTablero },
+              usuario: { idUsuario },
+            },
+          });
+          if (miembroExistente)
+            throw new ConflictException('Usuario ya pertenece al tablero');
+
+          const nuevoMiembro = miembrosRepositorio.create({
+            tablero: invitacionTransaccional.tablero,
+            usuario: invitacionTransaccional.usuarioInvitado,
+            rolEnTablero: invitacionTransaccional.rolInvitado as RolEnTablero,
+          });
+          const miembroGuardado = await manager.save(nuevoMiembro);
+
+          const fechaRespuesta: Date = new Date();
+          invitacionTransaccional.estadoInvitacion = EstadoInvitacion.ACEPTADA;
+          invitacionTransaccional.fechaRespuesta = fechaRespuesta;
+          await manager.save(invitacionTransaccional);
+
+          return {
+            idTableroUsuario: miembroGuardado.idTableroUsuario,
+            estadoInvitacion: EstadoInvitacion.ACEPTADA,
+            fechaRespuesta,
+          };
+        },
+      );
+    } catch (error) {
+      if (error instanceof QueryFailedError) {
+        throw new ConflictException(
+          'Error de concurrencia al aceptar la invitación',
+        );
+      }
+      throw error;
+    }
+  }
+
+  private async rechazarInvitacion(
+    invitacion: InvitacionesTableros,
+  ): Promise<RespuestaAccionInvitacionDto> {
+    const fechaRespuesta: Date = new Date();
+    invitacion.estadoInvitacion = EstadoInvitacion.RECHAZADA;
+    invitacion.fechaRespuesta = fechaRespuesta;
+    const invitacionActualizada =
+      await this.invitacionesRepository.save(invitacion);
+
+    return {
+      idTableroUsuario: null,
+      estadoInvitacion: invitacionActualizada.estadoInvitacion,
+      fechaRespuesta,
+    };
+  }
 }

@@ -8,7 +8,11 @@ import {
   Param,
   Patch,
 } from '@nestjs/common';
-import { TablerosService } from './tableros.service';
+import {
+  RespuestaInvitacionListadoDto,
+  RespuestaAccionInvitacionDto,
+  TablerosService,
+} from './tableros.service';
 import { CrearTableroDto } from './dto/crear-tablero.dto';
 import {
   ApiBearerAuth,
@@ -25,6 +29,7 @@ import { Usuarios } from '../usuarios/entity/usuario.entity';
 import { ActualizarTableroDto } from './dto/actualizar-tablero.dto';
 import { InvitacionesTableros } from './entities/invitaciones-tableros.entity';
 import { InvitarUsuarioDto } from './dto/invitar-usuario.dto';
+import { ResponderInvitacionDto } from './dto/responder-invitacion.dto';
 
 @ApiTags('tableros')
 @Controller('tableros')
@@ -59,7 +64,7 @@ export class TablerosController {
   })
   @Post()
   @UseGuards(AuthGuard)
-  public async crearTablero(
+  async crearTablero(
     @GetUser() usuario: Usuarios,
     @Body() crearTableroDto: CrearTableroDto,
   ): Promise<Tableros> {
@@ -107,6 +112,30 @@ export class TablerosController {
     @GetUser() usuario: Usuarios,
   ): Promise<Tableros[]> {
     return await this.tablerosService.obtenerTablerosUsuario(usuario.idUsuario);
+  }
+
+  /* ========== LISTAR INVITACIONES PENDIENTES ========== */
+  @ApiOperation({
+    summary: 'Listar invitaciones pendientes',
+    description: 'Obtiene una lista de las invitaciones pendientes del usuario',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lista de invitaciones obtenida exitosamente',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Error al obtener las invitaciones',
+  })
+  @Get('invitaciones')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  async listarInvitaciones(
+    @GetUser() usuario: Usuarios,
+  ): Promise<RespuestaInvitacionListadoDto[]> {
+    return await this.tablerosService.listarInvitacionesPendientes(
+      usuario.idUsuario,
+    );
   }
 
   /* ========== OBTENER DETALLES DE UN TABLERO ========== */
@@ -186,6 +215,34 @@ export class TablerosController {
   ): Promise<InvitacionesTableros> {
     return await this.tablerosService.invitarUsuario(
       idTablero,
+      dto,
+      usuario.idUsuario,
+    );
+  }
+
+  /* ========== RESPONDER INVITACIÓN ========== */
+  @ApiOperation({
+    summary: 'Responder a una invitación',
+    description: 'Permite aceptar o rechazar una invitación a un tablero',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Respuesta a la invitación procesada exitosamente',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Error al procesar la respuesta a la invitación',
+  })
+  @Patch('invitaciones/:id')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  async responderInvitacion(
+    @GetUser() usuario: Usuarios,
+    @Param('id') idInvitacion: number,
+    @Body() dto: ResponderInvitacionDto,
+  ): Promise<RespuestaAccionInvitacionDto> {
+    return await this.tablerosService.responderInvitacion(
+      idInvitacion,
       dto,
       usuario.idUsuario,
     );

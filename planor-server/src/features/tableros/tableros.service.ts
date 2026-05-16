@@ -59,35 +59,30 @@ export class TablerosService {
       );
     }
 
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-    try {
-      const nuevoTablero: Tableros =
-        this.tablerosRepository.create(crearTableroDto);
-      nuevoTablero.propietario = propietarioEncontrado;
+    // Usar una transacción para asegurar que ambas operaciones (crear tablero y asignar propietario) se completen correctamente
+    const tableroGuardado = await this.dataSource.transaction(
+      async (manager) => {
+        const nuevoTablero = this.tablerosRepository.create(crearTableroDto);
+        nuevoTablero.propietario = propietarioEncontrado;
 
-      const savedTablero = await queryRunner.manager.save(nuevoTablero);
+        const saved = await manager.save(nuevoTablero);
 
-      const miembro = this.tablerosUsuariosRepository.create({
-        tablero: savedTablero,
-        usuario: propietarioEncontrado,
-        rolEnTablero: RolEnTablero.PROPIETARIO,
-      });
-      await queryRunner.manager.save(miembro);
+        const miembro = this.tablerosUsuariosRepository.create({
+          tablero: saved,
+          usuario: propietarioEncontrado,
+          rolEnTablero: RolEnTablero.PROPIETARIO,
+        });
+        await manager.save(miembro);
 
-      await queryRunner.commitTransaction();
-      // opcional: cargar relaciones antes de devolver
-      return (await this.tablerosRepository.findOne({
-        where: { idTablero: savedTablero.idTablero },
-        relations: ['propietario', 'miembros'],
-      })) as Tableros;
-    } catch (err) {
-      await queryRunner.rollbackTransaction();
-      throw err;
-    } finally {
-      await queryRunner.release();
-    }
+        return saved;
+      },
+    );
+
+    const tableroConRelaciones = await this.tablerosRepository.findOne({
+      where: { idTablero: tableroGuardado.idTablero },
+      relations: ['propietario', 'miembros'],
+    });
+    return tableroConRelaciones as Tableros;
   }
 
   /* ========== OBTENER TABLEROS ========== */
